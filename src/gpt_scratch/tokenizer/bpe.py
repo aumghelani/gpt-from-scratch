@@ -12,7 +12,7 @@ from dataclasses import dataclass
 
 # GPT-2-style pre-split: contractions, words, numbers, punctuation, whitespace.
 SPLIT_PATTERN = re.compile(
-    r"""'(?:[sdmt]|ll|ve|re)| ?[^\W\d_]+| ?\d+| ?[^\s\w]+|\s+(?!\S)|\s+""", re.UNICODE
+    r"""'(?:[sdmt]|ll|ve|re)| ?[^\W\d_]+| ?\d+| ?(?:[^\s\w]|_)+|\s+(?!\S)|\s+""", re.UNICODE
 )
 BASE_VOCAB = 256
 
