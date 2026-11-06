@@ -6,9 +6,11 @@ Ids 0..255 are raw bytes; id 256+i is the i-th learned merge.
 from __future__ import annotations
 
 import itertools
+import json
 import re
 from collections import Counter
 from dataclasses import dataclass
+from pathlib import Path
 
 # GPT-2-style pre-split: contractions, words, numbers, punctuation, whitespace.
 SPLIT_PATTERN = re.compile(
@@ -138,3 +140,21 @@ class BPETokenizer:
             elif piece:
                 out.extend(self._encode_plain(piece, ranks))
         return out
+
+    def save(self, path: str | Path) -> None:
+        payload = {
+            "type": "bpe",
+            "merges": [list(pair) for pair in self.merges],
+            "special_tokens": list(self.special_tokens),
+        }
+        Path(path).write_text(json.dumps(payload), encoding="utf-8")
+
+    @classmethod
+    def load(cls, path: str | Path) -> BPETokenizer:
+        data = json.loads(Path(path).read_text(encoding="utf-8"))
+        if data.get("type") != "bpe":
+            raise ValueError(f"not a BPE tokenizer file: type={data.get('type')!r}")
+        return cls(
+            merges=tuple((a, b) for a, b in data["merges"]),
+            special_tokens=tuple(data["special_tokens"]),
+        )
