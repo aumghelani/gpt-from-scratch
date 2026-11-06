@@ -24,6 +24,7 @@ class GPTConfig:
     ffn: str = "gelu"
     bias: bool = True
     tie_weights: bool = True
+    flash: bool = True  # use fused scaled_dot_product_attention (numerically equal to manual)
 
     def __post_init__(self) -> None:
         for name in ("vocab_size", "block_size", "n_layer", "n_head", "n_embd"):

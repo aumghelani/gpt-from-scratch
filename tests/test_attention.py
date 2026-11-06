@@ -10,16 +10,21 @@ def cfg(**kw):
     return GPTConfig(**{**base, **kw})
 
 
-def test_output_shape_matches_input():
-    attn = CausalSelfAttention(cfg()).eval()
+@pytest.fixture(params=[False, True], ids=["manual", "sdpa"])
+def flash(request):
+    return request.param
+
+
+def test_output_shape_matches_input(flash):
+    attn = CausalSelfAttention(cfg(flash=flash)).eval()
     x = torch.randn(2, 10, 32)
     assert attn(x).shape == x.shape
 
 
-def test_no_future_leakage():
+def test_no_future_leakage(flash):
     """Changing token t must not change outputs at positions < t."""
     torch.manual_seed(0)
-    attn = CausalSelfAttention(cfg()).eval()
+    attn = CausalSelfAttention(cfg(flash=flash)).eval()
     x = torch.randn(1, 12, 32)
     base = attn(x)
     for t in (1, 5, 11):
@@ -30,24 +35,33 @@ def test_no_future_leakage():
         assert not torch.allclose(base[0, t:], out[0, t:], atol=1e-6)
 
 
-def test_position_zero_depends_only_on_itself():
+def test_position_zero_depends_only_on_itself(flash):
     torch.manual_seed(1)
-    attn = CausalSelfAttention(cfg()).eval()
+    attn = CausalSelfAttention(cfg(flash=flash)).eval()
     x = torch.randn(1, 6, 32)
     alone = attn(x[:, :1])
     assert torch.allclose(attn(x)[:, :1], alone, atol=1e-6)
 
 
-def test_batch_items_are_independent():
+def test_batch_items_are_independent(flash):
     torch.manual_seed(2)
-    attn = CausalSelfAttention(cfg()).eval()
+    attn = CausalSelfAttention(cfg(flash=flash)).eval()
     x = torch.randn(3, 8, 32)
     full = attn(x)
     single = attn(x[1:2])
     assert torch.allclose(full[1:2], single, atol=1e-6)
 
 
-def test_rejects_sequence_longer_than_block_size():
-    attn = CausalSelfAttention(cfg(block_size=8)).eval()
+def test_rejects_sequence_longer_than_block_size(flash):
+    attn = CausalSelfAttention(cfg(block_size=8, flash=flash)).eval()
     with pytest.raises(ValueError):
         attn(torch.randn(1, 9, 32))
+
+
+def test_sdpa_matches_manual_implementation():
+    torch.manual_seed(3)
+    manual = CausalSelfAttention(cfg(flash=False)).eval()
+    fused = CausalSelfAttention(cfg(flash=True)).eval()
+    fused.load_state_dict(manual.state_dict())
+    x = torch.randn(2, 13, 32)
+    assert torch.allclose(manual(x), fused(x), atol=1e-5)
