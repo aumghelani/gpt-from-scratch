@@ -42,7 +42,7 @@ Two errata from the author: at 0:57 "future" (not past) tokens must not communic
 | Evidence | Ablations proving each upgrade helps (val loss table). |
 
 ### Risks / unknowns
-- **Python 3.14 is installed locally**; PyTorch wheel support may lag. Pin the project to **Python 3.12 via `uv`**.
+- **Python 3.14 is installed locally** and PyTorch installs on it (verified with a dry-run). Use a plain `venv` + `pip`; `uv` is not installed.
 - Apple Silicon: use `mps` backend; some ops fall back to CPU. Keep model small (≈10–30M params).
 - Dataset licensing for any custom/Hindi/Hinglish corpus: check before committing data (never commit raw data; script downloads + checksums it).
 
@@ -70,7 +70,7 @@ Two errata from the author: at 0:57 "future" (not past) tokens must not communic
 
 ```
 01-gpt-from-scratch/
-  pyproject.toml            # uv, python 3.12
+  pyproject.toml            # venv + pip, python >=3.11
   src/gpt_scratch/
     data/        # download, clean, shard, loader
     tokenizer/   # char.py, bpe.py, special tokens, save/load
@@ -157,7 +157,7 @@ Format: `ID — task (deps)`. Every task = one microcommit (tests in same or pre
 - [ ] **G4 · W3** — Checkpoint selector (switch models without restart) (G2)
 
 ### Track H · Quality & write-up
-- [ ] **H1 · W1** — `pyproject.toml` (uv, py3.12), ruff, pytest, coverage config (none)
+- [ ] **H1 · W1** — `pyproject.toml` (venv+pip, py>=3.11), ruff, pytest, coverage config (none)
 - [ ] **H2 · W1** — Makefile/justfile: `test`, `lint`, `train-*` targets (none)
 - [ ] **H3 · W3** — Ablation runner + results table (D7, C9, C10, C11)
 - [ ] **H4 · W3** — Attention heatmap notebook (C4)
