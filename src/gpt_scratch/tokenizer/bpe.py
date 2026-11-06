@@ -44,21 +44,36 @@ def _count_pairs(words: dict[tuple[int, ...], int]) -> Counter[Pair]:
 @dataclass(frozen=True)
 class BPETokenizer:
     merges: tuple[Pair, ...]
+    special_tokens: tuple[str, ...] = ()
+
+    def __post_init__(self) -> None:
+        if len(set(self.special_tokens)) != len(self.special_tokens):
+            raise ValueError("special_tokens must be unique")
 
     @property
     def vocab_size(self) -> int:
-        return BASE_VOCAB + len(self.merges)
+        return BASE_VOCAB + len(self.merges) + len(self.special_tokens)
+
+    def special_id(self, token: str) -> int:
+        if token not in self.special_tokens:
+            raise KeyError(token)
+        return BASE_VOCAB + len(self.merges) + self.special_tokens.index(token)
 
     @classmethod
-    def train(cls, text: str, vocab_size: int) -> BPETokenizer:
+    def train(
+        cls, text: str, vocab_size: int, special_tokens: tuple[str, ...] = ()
+    ) -> BPETokenizer:
         if vocab_size < BASE_VOCAB:
             raise ValueError(f"vocab_size must be >= {BASE_VOCAB}")
+        if len(set(special_tokens)) != len(special_tokens):
+            raise ValueError("special_tokens must be unique")
         words: Counter[tuple[int, ...]] = Counter(
             tuple(chunk.encode("utf-8")) for chunk in SPLIT_PATTERN.findall(text)
         )
         merges: list[Pair] = []
         current = dict(words)
-        while BASE_VOCAB + len(merges) < vocab_size:
+        merge_budget = vocab_size - len(special_tokens)
+        while BASE_VOCAB + len(merges) < merge_budget:
             counts = _count_pairs(current)
             if not counts:
                 break
@@ -72,7 +87,7 @@ class BPETokenizer:
                 new_word = _merge_ids(word, best, new_id)
                 merged[new_word] = merged.get(new_word, 0) + freq
             current = merged
-        return cls(merges=tuple(merges))
+        return cls(merges=tuple(merges), special_tokens=tuple(special_tokens))
 
     def _token_bytes(self) -> list[bytes]:
         table = [bytes([i]) for i in range(BASE_VOCAB)]
@@ -82,7 +97,11 @@ class BPETokenizer:
 
     def decode(self, ids: list[int]) -> str:
         table = self._token_bytes()
-        return b"".join(table[i] for i in ids).decode("utf-8", errors="replace")
+        n_regular = len(table)
+        specials = {n_regular + j: tok.encode("utf-8") for j, tok in enumerate(self.special_tokens)}
+        return b"".join(table[i] if i < n_regular else specials[i] for i in ids).decode(
+            "utf-8", errors="replace"
+        )
 
     def _ranks(self) -> dict[Pair, int]:
         return {pair: rank for rank, pair in enumerate(self.merges)}
@@ -97,8 +116,7 @@ class BPETokenizer:
             ids = list(_merge_ids(tuple(ids), best, BASE_VOCAB + ranks[best]))
         return ids
 
-    def encode(self, text: str) -> list[int]:
-        ranks = self._ranks()
+    def _encode_plain(self, text: str, ranks: dict[Pair, int]) -> list[int]:
         cache: dict[bytes, list[int]] = {}
         out: list[int] = []
         for chunk in SPLIT_PATTERN.findall(text):
@@ -106,4 +124,17 @@ class BPETokenizer:
             if raw not in cache:
                 cache[raw] = self._encode_chunk(raw, ranks)
             out.extend(cache[raw])
+        return out
+
+    def encode(self, text: str, allow_special: bool = True) -> list[int]:
+        ranks = self._ranks()
+        if not (allow_special and self.special_tokens):
+            return self._encode_plain(text, ranks)
+        pattern = "(" + "|".join(re.escape(t) for t in self.special_tokens) + ")"
+        out: list[int] = []
+        for piece in re.split(pattern, text):
+            if piece in self.special_tokens:
+                out.append(self.special_id(piece))
+            elif piece:
+                out.extend(self._encode_plain(piece, ranks))
         return out
