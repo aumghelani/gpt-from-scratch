@@ -8,6 +8,7 @@ import torch
 from torch import nn
 from torch.nn import functional as F
 
+from gpt_scratch.model.attention import KV
 from gpt_scratch.model.block import Block
 from gpt_scratch.model.config import GPTConfig
 from gpt_scratch.model.norm import make_norm
@@ -46,16 +47,19 @@ class GPT(nn.Module):
         """Total trainable parameters (tied weights are counted once)."""
         return sum(p.numel() for p in self.parameters())
 
+    def _embed(self, idx: torch.Tensor, offset: int) -> torch.Tensor:
+        seq = idx.size(1)
+        if offset + seq > self.config.block_size:
+            raise ValueError(f"sequence length {offset + seq} exceeds block_size {self.config.block_size}")
+        x = self.tok_emb(idx)
+        if self.pos_emb is not None:
+            x = x + self.pos_emb(torch.arange(offset, offset + seq, device=idx.device))
+        return self.drop(x)
+
     def forward(
         self, idx: torch.Tensor, targets: torch.Tensor | None = None
     ) -> tuple[torch.Tensor, torch.Tensor | None]:
-        _, seq = idx.shape
-        if seq > self.config.block_size:
-            raise ValueError(f"sequence length {seq} exceeds block_size {self.config.block_size}")
-        x = self.tok_emb(idx)
-        if self.pos_emb is not None:
-            x = x + self.pos_emb(torch.arange(seq, device=idx.device))
-        x = self.drop(x)
+        x = self._embed(idx, offset=0)
         for block in self.blocks:
             x = block(x)
         logits = self.lm_head(self.final_norm(x))
@@ -63,3 +67,15 @@ class GPT(nn.Module):
             return logits, None
         loss = F.cross_entropy(logits.view(-1, logits.size(-1)), targets.reshape(-1))
         return logits, loss
+
+    def forward_cached(
+        self, idx: torch.Tensor, past: tuple[KV, ...] | None = None
+    ) -> tuple[torch.Tensor, tuple[KV, ...]]:
+        """Incremental decoding: feed new tokens plus per-layer (k, v); returns logits and new cache."""
+        offset = 0 if past is None else past[0][0].size(2)
+        x = self._embed(idx, offset)
+        present: list[KV] = []
+        for i, block in enumerate(self.blocks):
+            x, kv = block(x, past=None if past is None else past[i], return_kv=True)
+            present.append(kv)
+        return self.lm_head(self.final_norm(x)), tuple(present)
