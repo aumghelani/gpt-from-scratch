@@ -83,3 +83,27 @@ class BPETokenizer:
     def decode(self, ids: list[int]) -> str:
         table = self._token_bytes()
         return b"".join(table[i] for i in ids).decode("utf-8", errors="replace")
+
+    def _ranks(self) -> dict[Pair, int]:
+        return {pair: rank for rank, pair in enumerate(self.merges)}
+
+    def _encode_chunk(self, chunk: bytes, ranks: dict[Pair, int]) -> list[int]:
+        ids = list(chunk)
+        while len(ids) >= 2:
+            candidates = {pair: ranks[pair] for pair in itertools.pairwise(ids) if pair in ranks}
+            if not candidates:
+                break
+            best = min(candidates, key=candidates.__getitem__)
+            ids = list(_merge_ids(tuple(ids), best, BASE_VOCAB + ranks[best]))
+        return ids
+
+    def encode(self, text: str) -> list[int]:
+        ranks = self._ranks()
+        cache: dict[bytes, list[int]] = {}
+        out: list[int] = []
+        for chunk in SPLIT_PATTERN.findall(text):
+            raw = chunk.encode("utf-8")
+            if raw not in cache:
+                cache[raw] = self._encode_chunk(raw, ranks)
+            out.extend(cache[raw])
+        return out
