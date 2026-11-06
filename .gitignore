@@ -1,0 +1,6 @@
+.venv/
+data/raw/
+data/shards/
+checkpoints/
+runs/
+*.egg-info/
