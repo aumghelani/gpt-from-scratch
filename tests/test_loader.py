@@ -1,6 +1,7 @@
 import numpy as np
 import pytest
 import torch
+
 from gpt_scratch.data.loader import get_batch
 
 
