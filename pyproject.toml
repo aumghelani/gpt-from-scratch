@@ -29,3 +29,6 @@ src = ["src", "tests"]
 
 [tool.coverage.run]
 source = ["gpt_scratch"]
+
+[tool.ruff.lint]
+ignore = ["C408"]
