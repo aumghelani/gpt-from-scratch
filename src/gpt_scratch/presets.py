@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 
 
 @dataclass(frozen=True)
@@ -29,3 +29,14 @@ PRESETS: dict[str, Preset] = {
     # ~10M params (video-sized: 6 layers, 6 heads, 384 dims)
     "small": Preset(6, 6, 384, 256, 32, 5000, 1e-3, 1e-4, 200, 500, 20, 0.1),
 }
+
+
+def with_steps(preset: Preset, steps: int) -> Preset:
+    """Return a copy running `steps` steps, with warmup and eval interval kept consistent."""
+    if steps < 2:
+        raise ValueError("steps must be >= 2")
+    warmup = max(1, min(preset.warmup_steps, steps // 10 or 1))
+    return replace(
+        preset, max_steps=steps, warmup_steps=min(warmup, steps - 1),
+        eval_interval=min(preset.eval_interval, steps),
+    )
