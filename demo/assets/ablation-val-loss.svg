@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 440" width="760" height="440">
+<rect width="760" height="440" fill="#ffffff"/>
+<text x="64" y="30" font-family="system-ui, -apple-system, Segoe UI, sans-serif" font-size="18" font-weight="600" fill="#1d1d1b">Validation loss: each upgrade</text>
+<line x1="64" x2="736" y1="384.0" y2="384.0" stroke="#e4e3dd"/>
+<text x="56" y="388.0" text-anchor="end" font-family="system-ui, -apple-system, Segoe UI, sans-serif" font-size="12" fill="#6b6b66">1.4</text>
+<line x1="64" x2="736" y1="317.6" y2="317.6" stroke="#e4e3dd"/>
+<text x="56" y="321.6" text-anchor="end" font-family="system-ui, -apple-system, Segoe UI, sans-serif" font-size="12" fill="#6b6b66">1.6</text>
+<line x1="64" x2="736" y1="251.2" y2="251.2" stroke="#e4e3dd"/>
+<text x="56" y="255.2" text-anchor="end" font-family="system-ui, -apple-system, Segoe UI, sans-serif" font-size="12" fill="#6b6b66">1.8</text>
+<line x1="64" x2="736" y1="184.8" y2="184.8" stroke="#e4e3dd"/>
+<text x="56" y="188.8" text-anchor="end" font-family="system-ui, -apple-system, Segoe UI, sans-serif" font-size="12" fill="#6b6b66">2</text>
+<line x1="64" x2="736" y1="118.4" y2="118.4" stroke="#e4e3dd"/>
+<text x="56" y="122.4" text-anchor="end" font-family="system-ui, -apple-system, Segoe UI, sans-serif" font-size="12" fill="#6b6b66">2.2</text>
+<line x1="64" x2="736" y1="52.0" y2="52.0" stroke="#e4e3dd"/>
+<text x="56" y="56.0" text-anchor="end" font-family="system-ui, -apple-system, Segoe UI, sans-serif" font-size="12" fill="#6b6b66">2.4</text>
+<text x="64.0" y="404" text-anchor="middle" font-family="system-ui, -apple-system, Segoe UI, sans-serif" font-size="12" fill="#6b6b66">250</text>
+<text x="198.4" y="404" text-anchor="middle" font-family="system-ui, -apple-system, Segoe UI, sans-serif" font-size="12" fill="#6b6b66">500</text>
+<text x="332.8" y="404" text-anchor="middle" font-family="system-ui, -apple-system, Segoe UI, sans-serif" font-size="12" fill="#6b6b66">750</text>
+<text x="467.2" y="404" text-anchor="middle" font-family="system-ui, -apple-system, Segoe UI, sans-serif" font-size="12" fill="#6b6b66">1000</text>
+<text x="601.6" y="404" text-anchor="middle" font-family="system-ui, -apple-system, Segoe UI, sans-serif" font-size="12" fill="#6b6b66">1250</text>
+<text x="736.0" y="404" text-anchor="middle" font-family="system-ui, -apple-system, Segoe UI, sans-serif" font-size="12" fill="#6b6b66">1500</text>
+<text x="400.0" y="428" text-anchor="middle" font-family="system-ui, -apple-system, Segoe UI, sans-serif" font-size="13" fill="#1d1d1b">step</text>
+<text transform="translate(16 218.0) rotate(-90)" text-anchor="middle" font-family="system-ui, -apple-system, Segoe UI, sans-serif" font-size="13" fill="#1d1d1b">val_loss</text>
+<polyline points="64.0,92.1 198.4,182.4 332.8,235.9 467.2,270.9 601.6,292.0 736.0,305.2" fill="none" stroke="#2f7d6a" stroke-width="2.2" stroke-linejoin="round"/>
+<line x1="586" x2="608" y1="60" y2="60" stroke="#2f7d6a" stroke-width="3"/>
+<text x="614" y="64" font-family="system-ui, -apple-system, Segoe UI, sans-serif" font-size="13" fill="#1d1d1b">baseline</text>
+<polyline points="64.0,185.3 198.4,246.6 332.8,280.7 467.2,307.1 601.6,323.6 736.0,329.5" fill="none" stroke="#c0572b" stroke-width="2.2" stroke-linejoin="round"/>
+<line x1="586" x2="608" y1="80" y2="80" stroke="#c0572b" stroke-width="3"/>
+<text x="614" y="84" font-family="system-ui, -apple-system, Segoe UI, sans-serif" font-size="13" fill="#1d1d1b">+rope</text>
+<polyline points="64.0,188.6 198.4,247.3 332.8,281.7 467.2,307.0 601.6,320.3 736.0,328.8" fill="none" stroke="#3b6ea5" stroke-width="2.2" stroke-linejoin="round"/>
+<line x1="586" x2="608" y1="100" y2="100" stroke="#3b6ea5" stroke-width="3"/>
+<text x="614" y="104" font-family="system-ui, -apple-system, Segoe UI, sans-serif" font-size="13" fill="#1d1d1b">+rmsnorm</text>
+<polyline points="64.0,216.5 198.4,267.5 332.8,301.4 467.2,320.4 601.6,332.0 736.0,335.8" fill="none" stroke="#8a6bb8" stroke-width="2.2" stroke-linejoin="round"/>
+<line x1="586" x2="608" y1="120" y2="120" stroke="#8a6bb8" stroke-width="3"/>
+<text x="614" y="124" font-family="system-ui, -apple-system, Segoe UI, sans-serif" font-size="13" fill="#1d1d1b">+swiglu</text>
+</svg>

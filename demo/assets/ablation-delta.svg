@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 242" width="760" height="242">
+<rect width="760" height="242" fill="#ffffff"/>
+<text x="24" y="32" font-family="system-ui, -apple-system, Segoe UI, sans-serif" font-size="18" font-weight="600" fill="#1d1d1b">Validation loss change vs baseline</text>
+<line x1="420.0" x2="420.0" y1="52" y2="192" stroke="#6b6b66"/>
+<text x="138" y="84" text-anchor="end" font-family="system-ui, -apple-system, Segoe UI, sans-serif" font-size="14" fill="#1d1d1b">+rope</text>
+<rect x="261.3" y="66" width="158.7" height="28" rx="3" fill="#2f7d6a"/>
+<text x="253.3" y="85" text-anchor="end" font-family="system-ui, -apple-system, Segoe UI, sans-serif" font-size="13" fill="#1d1d1b">-0.073</text>
+<text x="138" y="128" text-anchor="end" font-family="system-ui, -apple-system, Segoe UI, sans-serif" font-size="14" fill="#1d1d1b">+rmsnorm</text>
+<rect x="265.6" y="110" width="154.4" height="28" rx="3" fill="#2f7d6a"/>
+<text x="257.6" y="129" text-anchor="end" font-family="system-ui, -apple-system, Segoe UI, sans-serif" font-size="13" fill="#1d1d1b">-0.071</text>
+<text x="138" y="172" text-anchor="end" font-family="system-ui, -apple-system, Segoe UI, sans-serif" font-size="14" fill="#1d1d1b">+swiglu</text>
+<rect x="220.0" y="154" width="200.0" height="28" rx="3" fill="#2f7d6a"/>
+<text x="212.0" y="173" text-anchor="end" font-family="system-ui, -apple-system, Segoe UI, sans-serif" font-size="13" fill="#1d1d1b">-0.092</text>
+<text x="420.0" y="228" text-anchor="middle" font-family="system-ui, -apple-system, Segoe UI, sans-serif" font-size="12" fill="#6b6b66">Δ val loss (left of zero = better)</text>
+</svg>
