@@ -72,6 +72,12 @@ def _build_parser() -> argparse.ArgumentParser:
     sm.add_argument("--top-p", type=float, default=1.0)
     sm.add_argument("--seed", type=int)
     sm.add_argument("--device", default="auto")
+    sv = sub.add_parser("serve", help="serve a run over HTTP with a web UI")
+    sv.add_argument("--run", required=True)
+    sv.add_argument("--host", default="127.0.0.1", help="bind address (default: local only)")
+    sv.add_argument("--port", type=int, default=8000)
+    sv.add_argument("--device", default="auto")
+
     cli_chat.add_parsers(sub)
     return parser
 
@@ -135,6 +141,20 @@ def _cmd_ablate(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_serve(args: argparse.Namespace) -> int:
+    import uvicorn  # imported lazily: only needed for this command
+
+    from gpt_scratch.serve.app import create_app
+
+    try:
+        app = create_app(args.run, args.device)
+    except FileNotFoundError as exc:
+        log.error("%s", exc)
+        return 2
+    uvicorn.run(app, host=args.host, port=args.port, log_level="info")
+    return 0
+
+
 def _cmd_sample(args: argparse.Namespace) -> int:
     run = Path(args.run)
     device = pick_device(args.device)
@@ -160,7 +180,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     args = _build_parser().parse_args(argv)
     handlers = {
         "prepare": _cmd_prepare, "train": _cmd_train, "ablate": _cmd_ablate, "sample": _cmd_sample,
-        "finetune": cli_chat.cmd_finetune, "chat": cli_chat.cmd_chat,
+        "serve": _cmd_serve, "finetune": cli_chat.cmd_finetune, "chat": cli_chat.cmd_chat,
     }
     try:
         return handlers[args.command](args)
