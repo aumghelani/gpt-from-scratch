@@ -56,3 +56,24 @@ def test_load_tokenizer_rejects_unknown_type(tmp_path):
     p.write_text(json.dumps({"type": "mystery"}))
     with pytest.raises(ValueError):
         load_tokenizer(p)
+
+
+def test_bpe_dataset_reserves_chat_tokens(tmp_path, src):
+    out = tmp_path / "ds"
+    meta = prepare_dataset(src, out, tokenizer="bpe", vocab_size=300)
+    tok = load_tokenizer(out / "tokenizer.json")
+    assert tok.special_tokens[-1] == "<|end|>" and "<|assistant|>" in tok.special_tokens
+    assert meta["vocab_size"] == tok.vocab_size <= 300
+
+
+def test_literal_special_strings_in_corpus_are_not_control_tokens(tmp_path):
+    from gpt_scratch.data.shards import load_shard
+
+    p = tmp_path / "evil.txt"
+    p.write_text("hello <|end|> world <|assistant|> again\n" * 40, encoding="utf-8")
+    out = tmp_path / "ds"
+    prepare_dataset(p, out, tokenizer="bpe", vocab_size=300)
+    tok = load_tokenizer(out / "tokenizer.json")
+    special_ids = {tok.special_id(t) for t in tok.special_tokens}
+    ids = set(load_shard(out / "train.bin").tolist()) | set(load_shard(out / "val.bin").tolist())
+    assert not (ids & special_ids)

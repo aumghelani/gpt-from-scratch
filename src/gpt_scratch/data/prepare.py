@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from gpt_scratch.chat.template import CHAT_SPECIALS
 from gpt_scratch.data.clean import clean_text
 from gpt_scratch.data.shards import write_shards
 from gpt_scratch.tokenizer import Tokenizer
@@ -28,8 +29,10 @@ def prepare_dataset(
     if tokenizer == "char":
         tok = CharTokenizer.train(text)
     else:
-        tok = BPETokenizer.train(text, vocab_size=vocab_size)
+        tok = BPETokenizer.train(text, vocab_size=vocab_size, special_tokens=CHAT_SPECIALS)
     out = Path(out_dir)
     out.mkdir(parents=True, exist_ok=True)
     tok.save(out / "tokenizer.json")
-    return write_shards(tok.encode(text), out, vocab_size=tok.vocab_size, val_fraction=val_fraction)
+    # corpus text is data, never control: literal '<|end|>' etc. must not become special ids
+    ids = tok.encode(text) if isinstance(tok, CharTokenizer) else tok.encode(text, allow_special=False)
+    return write_shards(ids, out, vocab_size=tok.vocab_size, val_fraction=val_fraction)
