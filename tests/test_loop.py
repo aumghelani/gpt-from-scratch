@@ -83,3 +83,28 @@ def test_stop_after_saves_resumable_checkpoint(tmp_path):
     cfg = tcfg(tmp_path)
     r = train(fresh_model(), DATA, DATA, cfg, MODEL_CFG, stop_after=4)
     assert r.steps_done == 4 and (tmp_path / "run" / "latest.pt").exists()
+
+
+def _cycle_source(batch_size, block_size, generator, device):
+    """Toy batch source: always the 0..11 cycle, with the first two targets masked out."""
+    starts = torch.randint(0, 12, (batch_size,), generator=generator)
+    base = (starts[:, None] + torch.arange(block_size + 1)[None, :]) % 12
+    x, y = base[:, :-1].clone(), base[:, 1:].clone()
+    y[:, :2] = -100
+    return x.to(device), y.to(device)
+
+
+def test_trains_from_a_callable_batch_source(tmp_path):
+    result = train(
+        fresh_model(), _cycle_source, _cycle_source,
+        tcfg(tmp_path, max_steps=120, eval_interval=60), MODEL_CFG,
+    )
+    assert result.train_losses[-1] < 0.5 < result.train_losses[0]
+    assert len(result.val_history) == 2
+
+
+def test_estimate_loss_accepts_callable():
+    from gpt_scratch.train.evaluate import estimate_loss
+
+    loss = estimate_loss(fresh_model(), _cycle_source, 4, 8, 3, seed=0)
+    assert loss > 0

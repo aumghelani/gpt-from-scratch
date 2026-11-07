@@ -10,7 +10,7 @@ import numpy as np
 import torch
 from torch import nn
 
-from gpt_scratch.data.loader import get_batch
+from gpt_scratch.data.loader import BatchSource, sample_batch
 from gpt_scratch.model.config import GPTConfig
 from gpt_scratch.train.checkpoint import load_checkpoint, save_checkpoint
 from gpt_scratch.train.device import pick_device, seed_everything
@@ -59,8 +59,8 @@ class TrainResult:
 
 def train(
     model: nn.Module,
-    train_data: np.ndarray,
-    val_data: np.ndarray,
+    train_data: np.ndarray | BatchSource,
+    val_data: np.ndarray | BatchSource,
     cfg: TrainConfig,
     model_config: GPTConfig,
     resume_from: str | Path | None = None,
@@ -96,7 +96,7 @@ def train(
             for group in optimizer.param_groups:
                 group["lr"] = lr
             micro = [
-                get_batch(train_data, cfg.batch_size, cfg.block_size, generator, device)
+                sample_batch(train_data, cfg.batch_size, cfg.block_size, generator, device)
                 for _ in range(cfg.grad_accum_steps)
             ]
             began = time.perf_counter()

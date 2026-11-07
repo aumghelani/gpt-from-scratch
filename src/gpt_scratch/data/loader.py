@@ -2,8 +2,12 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
+
 import numpy as np
 import torch
+
+BatchSource = Callable[[int, int, torch.Generator, "str | torch.device"], tuple[torch.Tensor, torch.Tensor]]
 
 
 def get_batch(
@@ -22,3 +26,16 @@ def get_batch(
         [torch.from_numpy(data[s + 1 : s + 1 + block_size].astype(np.int64)) for s in starts.tolist()]
     )
     return x.to(device), y.to(device)
+
+
+def sample_batch(
+    source: np.ndarray | BatchSource,
+    batch_size: int,
+    block_size: int,
+    generator: torch.Generator,
+    device: str | torch.device = "cpu",
+) -> tuple[torch.Tensor, torch.Tensor]:
+    """Draw a batch from either a flat token array or a custom batch-source callable."""
+    if callable(source):
+        return source(batch_size, block_size, generator, device)
+    return get_batch(source, batch_size, block_size, generator, device)

@@ -3,18 +3,17 @@
 from __future__ import annotations
 
 import json
-from collections.abc import Callable, Sequence
+from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
 
 import torch
 
 from gpt_scratch.chat.template import Message, encode_chat
+from gpt_scratch.data.loader import BatchSource
 from gpt_scratch.tokenizer.bpe import BPETokenizer
 
 IGNORE_INDEX = -100  # torch cross_entropy ignores this target value
-
-BatchSource = Callable[[int, int, torch.Generator, "str | torch.device"], tuple[torch.Tensor, torch.Tensor]]
 
 
 @dataclass(frozen=True)

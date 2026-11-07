@@ -6,12 +6,12 @@ import numpy as np
 import torch
 from torch import nn
 
-from gpt_scratch.data.loader import get_batch
+from gpt_scratch.data.loader import BatchSource, sample_batch
 
 
 def estimate_loss(
     model: nn.Module,
-    data: np.ndarray,
+    data: np.ndarray | BatchSource,
     batch_size: int,
     block_size: int,
     n_batches: int,
@@ -26,7 +26,7 @@ def estimate_loss(
         with torch.no_grad():
             losses = []
             for _ in range(n_batches):
-                x, y = get_batch(data, batch_size, block_size, generator, device)
+                x, y = sample_batch(data, batch_size, block_size, generator, device)
                 _, loss = model(x, y)
                 losses.append(loss.item())
     finally:
