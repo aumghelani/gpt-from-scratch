@@ -15,6 +15,7 @@ import torch
 from gpt_scratch.data.download import fetch_tiny_shakespeare
 from gpt_scratch.data.prepare import TOKENIZERS, prepare_dataset
 from gpt_scratch.data.shards import load_shard
+from gpt_scratch.experiments.ablation import default_variants, render_markdown, run_ablation
 from gpt_scratch.model.config import FFNS, NORMS, POS_ENCODINGS, GPTConfig
 from gpt_scratch.model.gpt import GPT
 from gpt_scratch.presets import PRESETS, model_config_for, with_steps
@@ -50,6 +51,15 @@ def _build_parser() -> argparse.ArgumentParser:
     tr.add_argument("--seed", type=int, default=1337)
     tr.add_argument("--resume", action="store_true")
     tr.add_argument("--stop-after", type=int, help="stop after N steps (for interruption tests)")
+
+    ab = sub.add_parser("ablate", help="train architecture variants and compare validation loss")
+    ab.add_argument("--data", required=True)
+    ab.add_argument("--out", required=True)
+    ab.add_argument("--preset", choices=sorted(PRESETS), default="tiny")
+    ab.add_argument("--steps", type=int)
+    ab.add_argument("--device", default="auto")
+    ab.add_argument("--seed", type=int, default=1337)
+    ab.add_argument("--variants", help="comma-separated subset of: baseline,+rope,+rmsnorm,+swiglu")
 
     sm = sub.add_parser("sample", help="generate text from a trained run")
     sm.add_argument("--run", required=True)
@@ -108,6 +118,21 @@ def _cmd_train(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_ablate(args: argparse.Namespace) -> int:
+    available = {v.name: v for v in default_variants()}
+    chosen = list(available.values())
+    if args.variants:
+        names = [n.strip() for n in args.variants.split(",")]
+        unknown = [n for n in names if n not in available]
+        if unknown:
+            log.error("unknown variants: %s (choose from %s)", unknown, sorted(available))
+            return 2
+        chosen = [available[n] for n in names]
+    results = run_ablation(args.data, args.out, args.preset, args.steps, chosen, args.device, args.seed)
+    sys.stdout.write(render_markdown(results))
+    return 0
+
+
 def _cmd_sample(args: argparse.Namespace) -> int:
     run = Path(args.run)
     device = pick_device(args.device)
@@ -131,7 +156,9 @@ def _cmd_sample(args: argparse.Namespace) -> int:
 def main(argv: Sequence[str] | None = None) -> int:
     logging.basicConfig(level=logging.INFO, format="%(message)s", stream=sys.stderr)
     args = _build_parser().parse_args(argv)
-    handlers = {"prepare": _cmd_prepare, "train": _cmd_train, "sample": _cmd_sample}
+    handlers = {
+        "prepare": _cmd_prepare, "train": _cmd_train, "ablate": _cmd_ablate, "sample": _cmd_sample,
+    }
     try:
         return handlers[args.command](args)
     except FileNotFoundError as exc:
