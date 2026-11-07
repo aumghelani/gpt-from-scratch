@@ -20,6 +20,8 @@ from gpt_scratch.experiments.ablation import default_variants, render_markdown, 
 from gpt_scratch.model.config import FFNS, NORMS, POS_ENCODINGS, GPTConfig
 from gpt_scratch.model.gpt import GPT
 from gpt_scratch.presets import PRESETS, model_config_for, with_steps
+from gpt_scratch.report.logs import read_series
+from gpt_scratch.report.svg import delta_bar_svg, line_chart_svg
 from gpt_scratch.sample.generate import stream_generate
 from gpt_scratch.tokenizer import load_tokenizer
 from gpt_scratch.train.checkpoint import load_checkpoint
@@ -73,6 +75,18 @@ def _build_parser() -> argparse.ArgumentParser:
     sm.add_argument("--top-p", type=float, default=1.0)
     sm.add_argument("--seed", type=int)
     sm.add_argument("--device", default="auto")
+    pl = sub.add_parser("plot", help="draw training curves from CSV logs as an SVG")
+    pl.add_argument("--log", action="append", required=True, metavar="NAME=PATH")
+    pl.add_argument("--column", default="loss", help="loss, val_loss, lr, grad_norm, ...")
+    pl.add_argument("--out", required=True)
+    pl.add_argument("--title", default="Training curve")
+    pl.add_argument("--theme", choices=("light", "dark"), default="light")
+
+    pa = sub.add_parser("plot-ablation", help="draw ablation deltas vs baseline as an SVG")
+    pa.add_argument("--results", required=True, help="results.json from `ablate`")
+    pa.add_argument("--out", required=True)
+    pa.add_argument("--theme", choices=("light", "dark"), default="light")
+
     sv = sub.add_parser("serve", help="serve a run over HTTP with a web UI")
     sv.add_argument("--run", required=True)
     sv.add_argument("--host", default="127.0.0.1", help="bind address (default: local only)")
@@ -144,6 +158,33 @@ def _cmd_ablate(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_plot(args: argparse.Namespace) -> int:
+    series = {}
+    for spec in args.log:
+        name, sep, path = spec.partition("=")
+        if not sep or not name or not path:
+            log.error("--log must look like NAME=PATH, got %r", spec)
+            return 2
+        series[name] = read_series(path, args.column)
+    svg = line_chart_svg(series, args.title, "step", args.column, theme=args.theme)
+    Path(args.out).parent.mkdir(parents=True, exist_ok=True)
+    Path(args.out).write_text(svg, encoding="utf-8")
+    return 0
+
+
+def _cmd_plot_ablation(args: argparse.Namespace) -> int:
+    rows = json.loads(Path(args.results).read_text(encoding="utf-8"))
+    base = next((r["val_loss"] for r in rows if r["name"] == "baseline"), None)
+    if base is None:
+        log.error("results contain no 'baseline' row")
+        return 2
+    items = [(r["name"], r["val_loss"] - base) for r in rows if r["name"] not in ("bigram", "baseline")]
+    svg = delta_bar_svg(items, "Validation loss change vs baseline", "Δ val loss", theme=args.theme)
+    Path(args.out).parent.mkdir(parents=True, exist_ok=True)
+    Path(args.out).write_text(svg, encoding="utf-8")
+    return 0
+
+
 def _cmd_serve(args: argparse.Namespace) -> int:
     import uvicorn  # imported lazily: only needed for this command
 
@@ -183,7 +224,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     args = _build_parser().parse_args(argv)
     handlers = {
         "prepare": _cmd_prepare, "train": _cmd_train, "ablate": _cmd_ablate, "sample": _cmd_sample,
-        "serve": _cmd_serve, "finetune": cli_chat.cmd_finetune, "chat": cli_chat.cmd_chat,
+        "serve": _cmd_serve, "plot": _cmd_plot, "plot-ablation": _cmd_plot_ablation, "finetune": cli_chat.cmd_finetune, "chat": cli_chat.cmd_chat,
     }
     try:
         return handlers[args.command](args)
