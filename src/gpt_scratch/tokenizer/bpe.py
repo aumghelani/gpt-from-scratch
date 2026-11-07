@@ -10,6 +10,7 @@ import json
 import re
 from collections import Counter
 from dataclasses import dataclass
+from functools import cached_property
 from pathlib import Path
 
 # GPT-2-style pre-split: contractions, words, numbers, punctuation, whitespace.
@@ -91,14 +92,23 @@ class BPETokenizer:
             current = merged
         return cls(merges=tuple(merges), special_tokens=tuple(special_tokens))
 
-    def _token_bytes(self) -> list[bytes]:
+    @cached_property
+    def _byte_table(self) -> list[bytes]:
+        """id -> bytes for all regular tokens; built once per tokenizer instance."""
         table = [bytes([i]) for i in range(BASE_VOCAB)]
         for left, right in self.merges:
             table.append(table[left] + table[right])
         return table
 
+    def token_bytes(self, token_id: int) -> bytes:
+        """Raw bytes of one token (special tokens yield their literal text)."""
+        regular = BASE_VOCAB + len(self.merges)
+        if token_id >= regular:
+            return self.special_tokens[token_id - regular].encode("utf-8")
+        return self._byte_table[token_id]
+
     def decode(self, ids: list[int]) -> str:
-        table = self._token_bytes()
+        table = self._byte_table
         n_regular = len(table)
         specials = {n_regular + j: tok.encode("utf-8") for j, tok in enumerate(self.special_tokens)}
         return b"".join(table[i] if i < n_regular else specials[i] for i in ids).decode(
