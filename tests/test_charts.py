@@ -61,3 +61,12 @@ def test_delta_bars_color_improvements_and_show_values():
 def test_delta_bars_empty_rejected():
     with pytest.raises(ValueError):
         delta_bar_svg([], title="t", x_label="x")
+
+
+def test_longest_negative_bar_leaves_room_for_its_value_label():
+    """Regression: the label of the longest bar used to overprint the row label."""
+    svg = delta_bar_svg([("+swiglu", -0.092), ("+rope", -0.073)], title="t", x_label="x")
+    bar_xs = [float(m) for m in re.findall(r'<rect x="([\d.]+)" y="\d+" width', svg)]
+    label_right_edge = 150 - 12  # row labels are right-aligned at (left - 12)
+    value_label_width = 56  # "-0.092" at 13px, with a gap
+    assert min(bar_xs) >= label_right_edge + value_label_width

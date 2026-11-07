@@ -111,7 +111,7 @@ def delta_bar_svg(
     ]
     for i, (label, value) in enumerate(items):
         y = top + i * row
-        length = abs(value) / span * (half - 8)
+        length = abs(value) / span * (half - 70)  # leave room for the value label beside the bar
         x = zero_x - length if value < 0 else zero_x
         color = PALETTE[0] if value < 0 else PALETTE[1]
         out.append(f'<text x="{left - 12}" y="{y + 24}" text-anchor="end" {FONT} font-size="14" fill="{c["fg"]}">{escape(label)}</text>')
