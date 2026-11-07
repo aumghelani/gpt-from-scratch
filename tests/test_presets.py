@@ -37,5 +37,6 @@ def test_model_config_for_applies_preset_and_overrides():
     from gpt_scratch.presets import model_config_for
 
     cfg = model_config_for(PRESETS["test"], vocab_size=65, pos="rope", norm="rmsnorm", ffn="swiglu")
-    assert cfg.vocab_size == 65 and cfg.n_embd == 16 and cfg.block_size == 16
+    assert cfg.vocab_size == 65 and cfg.n_embd == PRESETS["test"].n_embd
+    assert cfg.block_size == PRESETS["test"].block_size
     assert (cfg.pos_encoding, cfg.norm, cfg.ffn) == ("rope", "rmsnorm", "swiglu")

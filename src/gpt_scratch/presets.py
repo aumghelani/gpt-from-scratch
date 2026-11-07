@@ -25,7 +25,7 @@ class Preset:
 
 PRESETS: dict[str, Preset] = {
     # seconds, for tests
-    "test": Preset(1, 2, 16, 16, 4, 6, 3e-3, 3e-4, 2, 3, 2),
+    "test": Preset(1, 2, 16, 64, 4, 6, 3e-3, 3e-4, 2, 3, 2),
     # ~0.8M params, minutes on a laptop; used for the ablation study
     "tiny": Preset(4, 4, 128, 128, 32, 1500, 3e-3, 3e-4, 100, 250, 20, 0.0),
     # ~10M params (video-sized: 6 layers, 6 heads, 384 dims)

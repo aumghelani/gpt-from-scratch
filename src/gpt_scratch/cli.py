@@ -12,6 +12,7 @@ from pathlib import Path
 
 import torch
 
+from gpt_scratch import cli_chat
 from gpt_scratch.data.download import fetch_tiny_shakespeare
 from gpt_scratch.data.prepare import TOKENIZERS, prepare_dataset
 from gpt_scratch.data.shards import load_shard
@@ -71,6 +72,7 @@ def _build_parser() -> argparse.ArgumentParser:
     sm.add_argument("--top-p", type=float, default=1.0)
     sm.add_argument("--seed", type=int)
     sm.add_argument("--device", default="auto")
+    cli_chat.add_parsers(sub)
     return parser
 
 
@@ -158,6 +160,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     args = _build_parser().parse_args(argv)
     handlers = {
         "prepare": _cmd_prepare, "train": _cmd_train, "ablate": _cmd_ablate, "sample": _cmd_sample,
+        "finetune": cli_chat.cmd_finetune, "chat": cli_chat.cmd_chat,
     }
     try:
         return handlers[args.command](args)
