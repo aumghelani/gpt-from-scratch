@@ -59,3 +59,10 @@ def test_unknown_preset_exits_nonzero(tmp_path, corpus):
 def test_missing_data_dir_is_a_clear_error(tmp_path):
     assert main(["train", "--data", str(tmp_path / "nothing"), "--out", str(tmp_path / "r"),
                  "--preset", "test"]) != 0
+
+
+def test_training_snapshots_samples_at_start_and_each_eval(tmp_path, corpus):
+    _, run = run_pipeline(tmp_path, corpus)
+    files = sorted(p.name for p in (run / "samples").glob("step-*.txt"))
+    assert files == ["step-000000.txt", "step-000003.txt", "step-000006.txt"]
+    assert all(len((run / "samples" / f).read_text()) > 0 for f in files)

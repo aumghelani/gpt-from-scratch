@@ -25,6 +25,7 @@ from gpt_scratch.tokenizer import load_tokenizer
 from gpt_scratch.train.checkpoint import load_checkpoint
 from gpt_scratch.train.device import pick_device
 from gpt_scratch.train.loop import TrainConfig, train
+from gpt_scratch.train.samples import make_sample_hook
 
 log = logging.getLogger("gpt_scratch")
 
@@ -116,10 +117,12 @@ def _cmd_train(args: argparse.Namespace) -> int:
     shutil.copy(data_dir / "tokenizer.json", run_dir / "tokenizer.json")
     torch.manual_seed(args.seed)
     model = GPT(model_cfg)
+    sampler = make_sample_hook(load_tokenizer(run_dir / "tokenizer.json"), run_dir)
     log.info("model: %d parameters", model.num_params())
     result = train(
         model, load_shard(data_dir / "train.bin"), load_shard(data_dir / "val.bin"), cfg, model_cfg,
         resume_from=run_dir / "latest.pt" if args.resume else None, stop_after=args.stop_after,
+        on_eval=sampler,
     )
     final_val = result.val_history[-1][1] if result.val_history else float("nan")
     log.info("done at step %d, last val loss %.4f", result.steps_done, final_val)
