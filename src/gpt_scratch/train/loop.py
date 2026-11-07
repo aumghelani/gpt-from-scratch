@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import time
+from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -65,8 +66,13 @@ def train(
     model_config: GPTConfig,
     resume_from: str | Path | None = None,
     stop_after: int | None = None,
+    on_eval: Callable[[int, nn.Module], None] | None = None,
 ) -> TrainResult:
-    """Train `model` in place. `stop_after` ends the run early (still checkpointing)."""
+    """Train `model` in place. `stop_after` ends the run early (still checkpointing).
+
+    `on_eval(step, model)` is called once before training starts from scratch (step 0) and after
+    every validation pass, e.g. to snapshot sample generations.
+    """
     seed_everything(cfg.seed)
     device = pick_device(cfg.device)
     model.to(device)
@@ -87,6 +93,8 @@ def train(
     def checkpoint(path: Path, step: int) -> None:
         save_checkpoint(path, model, optimizer, step, model_config, generator)
 
+    if on_eval is not None and start == 0:
+        on_eval(0, model)
     with CSVLogger(out / "log.csv", LOG_FIELDS) as logger:
         for step in range(start, end):
             lr = lr_at(
@@ -115,6 +123,8 @@ def train(
                     seed=cfg.seed, device=device,
                 )
                 row["val_loss"] = val
+                if on_eval is not None:
+                    on_eval(done, model)
                 val_history.append((done, val))
                 if val < best_val:
                     best_val = val

@@ -108,3 +108,25 @@ def test_estimate_loss_accepts_callable():
 
     loss = estimate_loss(fresh_model(), _cycle_source, 4, 8, 3, seed=0)
     assert loss > 0
+
+
+def test_on_eval_hook_called_at_start_and_each_eval(tmp_path):
+    calls = []
+    train(fresh_model(), DATA, DATA, tcfg(tmp_path), MODEL_CFG, on_eval=lambda step, m: calls.append(step))
+    assert calls == [0, 6, 12]  # initial (untrained) snapshot, then every eval_interval
+
+
+def test_on_eval_not_called_with_step_zero_when_resuming(tmp_path):
+    cfg = tcfg(tmp_path)
+    train(fresh_model(), DATA, DATA, cfg, MODEL_CFG, stop_after=6)
+    calls = []
+    train(GPT(MODEL_CFG), DATA, DATA, cfg, MODEL_CFG, resume_from=f"{cfg.out_dir}/latest.pt",
+          on_eval=lambda step, m: calls.append(step))
+    assert calls == [12]
+
+
+def test_on_eval_receives_the_live_model(tmp_path):
+    seen = []
+    model = fresh_model()
+    train(model, DATA, DATA, tcfg(tmp_path), MODEL_CFG, on_eval=lambda step, m: seen.append(m is model))
+    assert all(seen)
