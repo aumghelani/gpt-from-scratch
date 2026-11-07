@@ -17,7 +17,7 @@ from gpt_scratch.data.prepare import TOKENIZERS, prepare_dataset
 from gpt_scratch.data.shards import load_shard
 from gpt_scratch.model.config import FFNS, NORMS, POS_ENCODINGS, GPTConfig
 from gpt_scratch.model.gpt import GPT
-from gpt_scratch.presets import PRESETS, with_steps
+from gpt_scratch.presets import PRESETS, model_config_for, with_steps
 from gpt_scratch.sample.generate import stream_generate
 from gpt_scratch.tokenizer import load_tokenizer
 from gpt_scratch.train.checkpoint import load_checkpoint
@@ -87,11 +87,7 @@ def _cmd_train(args: argparse.Namespace) -> int:
     preset = PRESETS[args.preset]
     if args.steps:
         preset = with_steps(preset, args.steps)
-    model_cfg = GPTConfig(
-        vocab_size=meta["vocab_size"], block_size=preset.block_size, n_layer=preset.n_layer,
-        n_head=preset.n_head, n_embd=preset.n_embd, dropout=preset.dropout,
-        pos_encoding=args.pos, norm=args.norm, ffn=args.ffn,
-    )
+    model_cfg = model_config_for(preset, meta["vocab_size"], args.pos, args.norm, args.ffn)
     cfg = TrainConfig(
         max_steps=preset.max_steps, batch_size=preset.batch_size, block_size=preset.block_size,
         max_lr=preset.max_lr, min_lr=preset.min_lr, warmup_steps=preset.warmup_steps,

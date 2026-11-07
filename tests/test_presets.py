@@ -31,3 +31,11 @@ def test_too_few_steps_rejected():
 def test_every_preset_is_internally_valid():
     for p in PRESETS.values():
         assert p.n_embd % p.n_head == 0 and 1 <= p.warmup_steps < p.max_steps
+
+
+def test_model_config_for_applies_preset_and_overrides():
+    from gpt_scratch.presets import model_config_for
+
+    cfg = model_config_for(PRESETS["test"], vocab_size=65, pos="rope", norm="rmsnorm", ffn="swiglu")
+    assert cfg.vocab_size == 65 and cfg.n_embd == 16 and cfg.block_size == 16
+    assert (cfg.pos_encoding, cfg.norm, cfg.ffn) == ("rope", "rmsnorm", "swiglu")

@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass, replace
 
+from gpt_scratch.model.config import GPTConfig
+
 
 @dataclass(frozen=True)
 class Preset:
@@ -39,4 +41,15 @@ def with_steps(preset: Preset, steps: int) -> Preset:
     return replace(
         preset, max_steps=steps, warmup_steps=min(warmup, steps - 1),
         eval_interval=min(preset.eval_interval, steps),
+    )
+
+
+def model_config_for(
+    preset: Preset, vocab_size: int, pos: str = "learned", norm: str = "layernorm", ffn: str = "gelu"
+) -> GPTConfig:
+    """Build the model config for a preset with the chosen architecture switches."""
+    return GPTConfig(
+        vocab_size=vocab_size, block_size=preset.block_size, n_layer=preset.n_layer,
+        n_head=preset.n_head, n_embd=preset.n_embd, dropout=preset.dropout,
+        pos_encoding=pos, norm=norm, ffn=ffn,
     )
