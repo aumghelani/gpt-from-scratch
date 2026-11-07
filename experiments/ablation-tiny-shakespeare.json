@@ -1,0 +1,37 @@
+[
+  {
+    "name": "bigram",
+    "params": 4225,
+    "val_loss": 2.6113404870033263,
+    "steps": 1500,
+    "seconds": 2.4
+  },
+  {
+    "name": "baseline",
+    "params": 818048,
+    "val_loss": 1.6374145448207855,
+    "steps": 1500,
+    "seconds": 48.3
+  },
+  {
+    "name": "+rope",
+    "params": 801664,
+    "val_loss": 1.5641923069953918,
+    "steps": 1500,
+    "seconds": 52.1
+  },
+  {
+    "name": "+rmsnorm",
+    "params": 800512,
+    "val_loss": 1.5661832630634307,
+    "steps": 1500,
+    "seconds": 65.3
+  },
+  {
+    "name": "+swiglu",
+    "params": 805312,
+    "val_loss": 1.5451541364192962,
+    "steps": 1500,
+    "seconds": 70.0
+  }
+]
