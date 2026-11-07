@@ -1,3 +1,4 @@
+import itertools
 import math
 
 import pytest
@@ -25,11 +26,11 @@ def test_reaches_min_at_max_steps_and_stays():
 
 def test_monotonic_non_increasing_after_warmup():
     lrs = [lr_at(s, **KW) for s in range(10, 111)]
-    assert all(a >= b - 1e-12 for a, b in zip(lrs, lrs[1:], strict=False))
+    assert all(a >= b - 1e-12 for a, b in itertools.pairwise(lrs))
 
 
 def test_always_within_bounds():
-    for s in range(0, 200):
+    for s in range(200):
         assert 0 < lr_at(s, **KW) <= 1e-3 and not math.isnan(lr_at(s, **KW))
 
 
