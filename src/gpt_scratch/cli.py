@@ -13,7 +13,7 @@ from pathlib import Path
 
 import torch
 
-from gpt_scratch import cli_chat
+from gpt_scratch import cli_chat, cli_inspect
 from gpt_scratch.data.download import fetch_tiny_shakespeare
 from gpt_scratch.data.prepare import TOKENIZERS, prepare_dataset
 from gpt_scratch.data.shards import load_shard
@@ -106,6 +106,7 @@ def _build_parser() -> argparse.ArgumentParser:
     sv.add_argument("--device", default="auto")
 
     cli_chat.add_parsers(sub)
+    cli_inspect.add_parsers(sub)
     return parser
 
 
@@ -270,6 +271,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         "prepare": _cmd_prepare, "train": _cmd_train, "ablate": _cmd_ablate, "sample": _cmd_sample,
         "serve": _cmd_serve, "attention": _cmd_attention, "plot": _cmd_plot, "plot-ablation": _cmd_plot_ablation, "finetune": cli_chat.cmd_finetune, "chat": cli_chat.cmd_chat,
         "make-tasks": cli_chat.cmd_make_tasks, "eval-chat": cli_chat.cmd_eval_chat,
+        "bench-cache": cli_inspect.cmd_bench_cache, "compare-tokenizer": cli_inspect.cmd_compare_tokenizer,
     }
     try:
         return handlers[args.command](args)
