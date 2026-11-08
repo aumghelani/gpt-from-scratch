@@ -26,6 +26,13 @@ def add_parsers(sub: argparse._SubParsersAction) -> None:  # type: ignore[type-a
     bc.add_argument("--new-tokens", type=int, default=200)
     bc.add_argument("--device", default="auto")
 
+    tr = sub.add_parser("tour", help="walk one prompt through tokens, model, attention, sampling and the KV cache")
+    tr.add_argument("--run", required=True)
+    tr.add_argument("--prompt", required=True)
+    tr.add_argument("--layer", type=int, default=0, help="which layer's attention to show")
+    tr.add_argument("--checkpoint", choices=("best", "latest"), default="best")
+    tr.add_argument("--device", default="auto")
+
     ct = sub.add_parser("compare-tokenizer", help="bytes/token of own BPE (several vocab sizes) vs tiktoken")
     ct.add_argument("--text", required=True)
     ct.add_argument("--vocab-sizes", type=int, nargs="+", default=[512, 1024, 2048, 4096])
@@ -78,4 +85,21 @@ def cmd_compare_tokenizer(args: argparse.Namespace) -> int:
     sys.stdout.write(f"{'tokenizer':<26}{'vocab':>8}{'tokens':>10}{'bytes/token':>13}\n")
     for row in rows:
         sys.stdout.write(_row(row))
+    return 0
+
+
+def cmd_tour(args: argparse.Namespace) -> int:
+    from gpt_scratch.cli_chat import _load_model
+    from gpt_scratch.tour.render import best_val_loss, render_tour
+
+    run = Path(args.run)
+    if not args.prompt:
+        log.error("--prompt must not be empty")
+        return 2
+    model = _load_model(run, args.checkpoint, pick_device(args.device))
+    if not 0 <= args.layer < len(model.blocks):
+        log.error("--layer must be between 0 and %d for this model", len(model.blocks) - 1)
+        return 2
+    tok = load_tokenizer(run / "tokenizer.json")
+    sys.stdout.write(render_tour(model, tok, args.prompt, layer=args.layer, best=best_val_loss(run)))
     return 0

@@ -271,7 +271,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         "prepare": _cmd_prepare, "train": _cmd_train, "ablate": _cmd_ablate, "sample": _cmd_sample,
         "serve": _cmd_serve, "attention": _cmd_attention, "plot": _cmd_plot, "plot-ablation": _cmd_plot_ablation, "finetune": cli_chat.cmd_finetune, "chat": cli_chat.cmd_chat,
         "make-tasks": cli_chat.cmd_make_tasks, "eval-chat": cli_chat.cmd_eval_chat,
-        "bench-cache": cli_inspect.cmd_bench_cache, "compare-tokenizer": cli_inspect.cmd_compare_tokenizer,
+        "bench-cache": cli_inspect.cmd_bench_cache, "tour": cli_inspect.cmd_tour, "compare-tokenizer": cli_inspect.cmd_compare_tokenizer,
     }
     try:
         return handlers[args.command](args)
