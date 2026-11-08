@@ -75,7 +75,7 @@ Two errata from the author: at 0:57 "future" (not past) tokens must not communic
 ## Proposed architecture
 
 ```
-01-gpt-from-scratch/
+gpt-from-scratch/
   pyproject.toml            # venv + pip, python >=3.11
   src/gpt_scratch/
     data/        # download, clean, shard, loader

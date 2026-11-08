@@ -3,7 +3,7 @@
 Narration is **bullets for you to say in your own words**, not a script to read. Every command below was run to
 produce the repo's results; numbers are from `README.md`. Record in short takes, one per beat.
 
-Setup before recording: `cd 01-gpt-from-scratch`, venv active, terminal font ≥ 18pt, notifications off, no `.env`
+Setup before recording: `cd gpt-from-scratch`, venv active, terminal font ≥ 18pt, notifications off, no `.env`
 or email visible. Pre-run `gpt-scratch serve --run runs/flagship-best --device cpu` in a second tab (port 8000).
 
 | # | Time | ON SCREEN | YOU SAY (bullets) |

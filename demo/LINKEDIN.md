@@ -35,7 +35,7 @@ What's the first thing you'd change to make a model this small actually useful?
 
 ## First comment
 
-Code, tests and the full ablation: https://github.com/aumghelani/ai-engineering-projects (folder `01-gpt-from-scratch`)
+Code, tests and the full ablation: https://github.com/aumghelani/gpt-from-scratch
 *(repo is private right now — make it public before posting this link)*
 
 ## Notes before you post
