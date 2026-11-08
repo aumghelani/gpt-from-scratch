@@ -3,6 +3,12 @@
 > Short name: **GPT From Scratch**. Original brief: *Apna GPT*.
 > **Scope:** A Decoder-Only Transformer Language Model Trained From Scratch (Byte-Pair Tokenizer, RoPE, KV-Cache, Supervised Chat Fine-Tuning, Streaming Inference Server)
 
+## Status (as built)
+
+**Done** (see [README](README.md) for evidence): char + byte-level BPE tokenizers (property-tested), GPT with causal attention (manual and fused, parity-tested), RoPE, RMSNorm, SwiGLU, KV cache, training loop with warmup+cosine LR, grad accumulation/clipping, atomic checkpoints and verified resume, sampling (temperature/top-k/top-p/repetition penalty), chat template with injection-safe encoding and assistant-only loss, SFT through the same loop, FastAPI SSE server + web UI, attention heatmaps, SVG charts, ablation runner (real results), a 10.7M-parameter flagship run (which overfits after step 1,500), demo script and LinkedIn draft.
+**Not done:** Hindi/Hinglish corpus (A5), tiktoken comparison (B6), checkpoint selector in the UI (G4), `make demo` replay command (Z2), and the screen recording itself (Z5, yours). The SFT demo uses conversations *derived* from the corpus rather than a curated instruction set (F5).
+**Plan deviations:** Python 3.14 + `venv`/`pip` (no `uv`); names changed from the Hindi codenames to descriptive ones.
+
 ## Source
 
 | | |
