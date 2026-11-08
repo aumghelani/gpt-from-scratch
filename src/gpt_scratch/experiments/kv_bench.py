@@ -48,6 +48,8 @@ def benchmark_cache(
     if len(prompt_ids) + new_tokens > block:
         raise ValueError(f"prompt + new tokens ({len(prompt_ids) + new_tokens}) exceeds block_size {block}")
     model.to(device)
+    for use_cache in (True, False):  # untimed warm-up: the first call on a GPU pays one-off kernel setup
+        generate(model, prompt_ids, min(4, new_tokens), temperature=0.0, use_cache=use_cache, device=device)
     cached, cached_seconds = _timed_greedy(model, prompt_ids, new_tokens, True, device)
     uncached, uncached_seconds = _timed_greedy(model, prompt_ids, new_tokens, False, device)
     return CacheBench(new_tokens, cached_seconds, uncached_seconds, cached == uncached)
