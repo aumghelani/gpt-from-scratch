@@ -133,7 +133,7 @@ def cmd_finetune(args: argparse.Namespace) -> int:
     cfg = TrainConfig(
         max_steps=args.steps, batch_size=args.batch_size, block_size=model_cfg.block_size,
         max_lr=args.lr, min_lr=args.lr / 10, warmup_steps=max(1, min(args.steps - 1, args.steps // 10)),
-        eval_interval=max(1, min(50, args.steps)), eval_batches=5, seed=args.seed,
+        eval_interval=max(1, min(50, args.steps)), eval_batches=5, ckpt_interval=max(1, min(50, args.steps)), seed=args.seed,
         device=args.device, out_dir=str(out),
     )
     out.mkdir(parents=True, exist_ok=True)

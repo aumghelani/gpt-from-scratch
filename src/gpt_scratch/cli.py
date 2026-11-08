@@ -147,7 +147,7 @@ def _cmd_train(args: argparse.Namespace) -> int:
         max_steps=preset.max_steps, batch_size=preset.batch_size, block_size=preset.block_size,
         max_lr=preset.max_lr, min_lr=preset.min_lr, warmup_steps=preset.warmup_steps,
         eval_interval=preset.eval_interval, eval_batches=preset.eval_batches,
-        seed=args.seed, device=args.device, out_dir=str(run_dir),
+        ckpt_interval=preset.eval_interval, seed=args.seed, device=args.device, out_dir=str(run_dir),
     )
     run_dir.mkdir(parents=True, exist_ok=True)
     shutil.copy(data_dir / "tokenizer.json", run_dir / "tokenizer.json")

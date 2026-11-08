@@ -130,3 +130,35 @@ def test_on_eval_receives_the_live_model(tmp_path):
     model = fresh_model()
     train(model, DATA, DATA, tcfg(tmp_path), MODEL_CFG, on_eval=lambda step, m: seen.append(m is model))
     assert all(seen)
+
+
+def test_a_crash_after_an_eval_leaves_a_checkpoint_from_the_previous_save(tmp_path):
+    def explode_at_12(step, model):
+        if step == 12:
+            raise RuntimeError("simulated crash")
+
+    cfg = tcfg(tmp_path, ckpt_interval=6)
+    with pytest.raises(RuntimeError):
+        train(fresh_model(), DATA, DATA, cfg, MODEL_CFG, on_eval=explode_at_12)
+    assert torch.load(tmp_path / "run" / "latest.pt", weights_only=False)["step"] == 6
+
+
+def test_resume_does_not_overwrite_a_better_best_checkpoint(tmp_path):
+    cfg = tcfg(tmp_path)
+    run = tmp_path / "run"
+    train(fresh_model(), DATA, DATA, cfg, MODEL_CFG, stop_after=6)
+    best_before = torch.load(run / "best.pt", weights_only=False)
+    assert best_before["step"] == 6
+    # the log records that an earlier evaluation was far better than anything the resumed run will see
+    with open(run / "log.csv", "a", newline="") as fh:
+        fh.write("6,0,0,0,0.000001,0\n")
+    train(fresh_model(), DATA, DATA, cfg, MODEL_CFG, resume_from=run / "latest.pt")
+    assert torch.load(run / "best.pt", weights_only=False)["step"] == 6
+
+
+def test_resume_without_a_better_logged_value_still_updates_best(tmp_path):
+    cfg = tcfg(tmp_path, max_steps=120, eval_interval=60)
+    run = tmp_path / "run"
+    train(fresh_model(), DATA, DATA, cfg, MODEL_CFG, stop_after=60)
+    train(fresh_model(), DATA, DATA, cfg, MODEL_CFG, resume_from=run / "latest.pt")
+    assert torch.load(run / "best.pt", weights_only=False)["step"] == 120  # still improving, so best moves on

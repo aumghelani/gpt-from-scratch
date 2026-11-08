@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import csv
 import time
 from collections.abc import Callable
 from dataclasses import dataclass
@@ -58,6 +59,15 @@ class TrainResult:
     checkpoint: Path
 
 
+def _best_logged_val(log_path: Path) -> float:
+    """Lowest validation loss recorded in an existing CSV log (inf when there is none)."""
+    if not log_path.exists():
+        return float("inf")
+    with log_path.open(newline="", encoding="utf-8") as fh:
+        values = [float(row["val_loss"]) for row in csv.DictReader(fh) if row.get("val_loss")]
+    return min(values, default=float("inf"))
+
+
 def train(
     model: nn.Module,
     train_data: np.ndarray | BatchSource,
@@ -87,7 +97,8 @@ def train(
     latest, best = out / "latest.pt", out / "best.pt"
     losses: list[float] = []
     val_history: list[tuple[int, float]] = []
-    best_val = float("inf")
+    # on resume, "best so far" must include evaluations from before the interruption
+    best_val = _best_logged_val(out / "log.csv") if start > 0 else float("inf")
     tokens_per_step = cfg.batch_size * cfg.block_size * cfg.grad_accum_steps
 
     def checkpoint(path: Path, step: int) -> None:

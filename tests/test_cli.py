@@ -80,3 +80,29 @@ def test_eval_interval_must_be_positive(tmp_path, corpus):
     with pytest.raises(SystemExit):
         main(["train", "--data", str(data), "--out", str(tmp_path / "r"), "--preset", "test",
               "--eval-interval", "0"])
+
+
+def test_a_crash_mid_training_can_be_resumed_from_the_last_eval(tmp_path, corpus, monkeypatch):
+    import torch
+
+    from gpt_scratch import cli
+
+    data, run = tmp_path / "data", tmp_path / "run"
+    assert main(["prepare", "--input", str(corpus), "--out", str(data), "--tokenizer", "char"]) == 0
+
+    def crashing_hook_factory(tok, out_dir):
+        def hook(step, model):
+            if step == 4:
+                raise RuntimeError("simulated crash")
+        return hook
+
+    monkeypatch.setattr(cli, "make_sample_hook", crashing_hook_factory)
+    args = ["train", "--data", str(data), "--out", str(run), "--preset", "test", "--device", "cpu",
+            "--eval-interval", "2"]
+    with pytest.raises(RuntimeError):
+        main(args)
+    assert torch.load(run / "latest.pt", weights_only=False)["step"] == 2  # saved at the step-2 evaluation
+
+    monkeypatch.undo()
+    assert main([*args, "--resume"]) == 0
+    assert torch.load(run / "latest.pt", weights_only=False)["step"] == 6
