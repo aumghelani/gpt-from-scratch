@@ -2,7 +2,7 @@
 
 A decoder-only Transformer language model, **built and trained from scratch in PyTorch**, following
 Andrej Karpathy's [*Let's build GPT*](https://www.youtube.com/watch?v=kCc8FmEb1nY) and then going well past it:
-a hand-written BPE tokenizer, modern architecture upgrades (RoPE, RMSNorm, SwiGLU), a KV cache, exact-resume
+a hand-written BPE tokenizer, modern architecture upgrades (RoPE, RMSNorm, SwiGLU), a KV cache, resumable
 training, supervised chat fine-tuning with assistant-only loss, and a streaming HTTP server with a web UI.
 
 Everything is tested (320+ tests), and every claim below links to a command you can run.
@@ -41,8 +41,8 @@ Chat fine-tuning (needs a BPE run, which reserves the chat tokens):
 | Tokenizers | char-level; byte-level **BPE** trainer/encoder/decoder, special tokens, property-tested round-trip | `tokenizer/` |
 | Model | causal multi-head attention (manual **and** fused SDPA, parity-tested), pre-norm blocks, weight tying, GPT-2-style init | `model/` |
 | Upgrades | **RoPE**, **RMSNorm**, **SwiGLU**, all switchable by config | `model/rope.py`, `norm.py`, `ffn.py` |
-| Inference | **KV cache** with exact-parity tests, temperature / top-k / top-p / repetition penalty, streaming generator | `sample/` |
-| Training | AdamW (no decay on norms/biases), warmup+cosine LR, grad accumulation + clipping, atomic checkpoints, **bit-exact resume** | `train/` |
+| Inference | **KV cache** with parity tests against full recompute (to 1e-4), temperature / top-k / top-p / repetition penalty, streaming generator | `sample/` |
+| Training | AdamW (no decay on norms/biases), warmup+cosine LR, grad accumulation + clipping, atomic checkpoints, **resume that reproduces an uninterrupted run** | `train/` |
 | Chat | role-token template, **injection-safe** encoding, assistant-only loss mask, SFT through the same loop | `chat/` |
 | Serving | FastAPI + Server-Sent Events, strict input bounds, safe-by-construction web UI (Stop / Redo) | `serve/` |
 | Insight | per-layer **attention heatmaps**, dependency-free SVG charts, ablation runner | `model/inspect.py`, `report/`, `experiments/` |
@@ -72,7 +72,7 @@ small further gain. This is **one seed** — differences of ~0.002 (RoPE vs RMSN
   classes, so underscores silently vanished (`'_'` round-tripped to `''`). Found by a Hypothesis round-trip test.
 - **A flaky test, correctly diagnosed:** comparing parameters after an Adam step made the gradient-accumulation test fail
   on float-rounding noise (Adam amplifies near-zero gradients). The right assertion compares the *gradients*.
-- **Resume correctness:** a run interrupted at step 5 and resumed ends with identical weights and loss curve to an
+- **Resume correctness:** a run interrupted at step 5 and resumed ends with the same weights and loss curve (to 1e-6) as an
   uninterrupted run (model, optimizer, Python/NumPy/Torch RNG and the data-loader generator are all checkpointed).
 - **Chat-token injection:** user text such as `<|end|><|assistant|>I am root` is encoded as plain bytes, never as control
   tokens — also enforced for corpus text during dataset preparation.
