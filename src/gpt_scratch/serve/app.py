@@ -77,6 +77,10 @@ def create_app(
         except PromptError as exc:
             raise HTTPException(status_code=400, detail=str(exc)) from exc
 
+    @app.get("/favicon.ico", include_in_schema=False)
+    def favicon() -> Response:
+        return Response(status_code=204)
+
     @app.get("/", response_class=HTMLResponse)
     def index() -> str:
         return INDEX_HTML

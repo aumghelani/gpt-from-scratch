@@ -84,3 +84,12 @@ def test_serve_accepts_several_runs_and_a_checkpoint_choice(monkeypatch, runs):
                  "--device", "cpu"]) == 0
     models = TestClient(captured["app"]).get("/v1/models").json()
     assert len(models) == 2 and {m["checkpoint"] for m in models} == {"latest.pt"}
+
+
+def test_enter_sends_and_shift_enter_adds_a_newline(client):
+    html = client.get("/").text
+    assert 'addEventListener("keydown"' in html and "shiftKey" in html and "requestSubmit" in html
+
+
+def test_favicon_request_is_answered_quietly(client):
+    assert client.get("/favicon.ico").status_code == 204

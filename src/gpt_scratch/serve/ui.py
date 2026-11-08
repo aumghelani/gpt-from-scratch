@@ -134,6 +134,9 @@ $("form").addEventListener("submit", (e) => {
   bubble("user", text); $("input").value = "";
   run(text);
 });
+$("input").addEventListener("keydown", (e) => {   // Enter sends; Shift+Enter inserts a newline
+  if (e.key === "Enter" && !e.shiftKey && !e.isComposing) { e.preventDefault(); $("form").requestSubmit(); }
+});
 $("stop").addEventListener("click", () => controller && controller.abort());
 $("regen").addEventListener("click", () => {
   if (!lastPrompt) return;
