@@ -5,9 +5,10 @@
 
 ## Status (as built)
 
-**Done** (see [README](README.md) for evidence): char + byte-level BPE tokenizers (property-tested), GPT with causal attention (manual and fused, parity-tested), RoPE, RMSNorm, SwiGLU, KV cache, training loop with warmup+cosine LR, grad accumulation/clipping, atomic checkpoints and verified resume, sampling (temperature/top-k/top-p/repetition penalty), chat template with injection-safe encoding and assistant-only loss, SFT through the same loop, FastAPI SSE server + web UI, attention heatmaps, SVG charts, ablation runner (real results), a 10.7M-parameter flagship run (which overfits after step 1,500), demo script and LinkedIn draft.
-**Not done:** Hindi/Hinglish corpus (A5), tiktoken comparison (B6), checkpoint selector in the UI (G4), `make demo` replay command (Z2), and the screen recording itself (Z5, yours). The SFT demo uses conversations *derived* from the corpus rather than a curated instruction set (F5).
-**Plan deviations:** Python 3.14 + `venv`/`pip` (no `uv`); names changed from the Hindi codenames to descriptive ones.
+**Done** (evidence in [README](README.md); explanation in [docs/HOW-IT-WORKS.md](docs/HOW-IT-WORKS.md)): char and byte-level BPE tokenizers (property-tested; compared with tiktoken), GPT with causal attention (manual and fused, parity-tested), RoPE, RMSNorm, SwiGLU, KV cache (identical tokens, measured 1.3x-4.0x speedup), training loop with warmup+cosine LR, grad accumulation/clipping, crash-safe checkpoints and verified resume, sampling, chat template with injection-safe encoding and assistant-only loss, SFT, checkable chat tasks with a scorer, FastAPI SSE server with a multi-model web UI (verified in a browser), attention heatmaps, SVG charts, ablation runner, the `tour` walkthrough, a 10.7M-parameter flagship run (overfits after step 1,500), an 11.0M-parameter BPE base and a fine-tuned chat model, demo script and LinkedIn draft.
+**Not done:** Hindi/Hinglish corpus (A5), PNG chart export (Z3), the screen recording (Z5, yours). `scripts/reproduce.sh` has not been run end to end as one script (each of its commands was run separately).
+**Honest limits:** the chat model does not generalise (3.3% on unseen scenes vs a 24.9% baseline); one seed per ablation; everything is 1 MB of Shakespeare.
+**Plan deviations:** Python 3.14 + `venv`/`pip` (no `uv`); names changed from the Hindi codenames to descriptive ones; chat tasks are derived from the corpus rather than hand-written.
 
 ## Source
 
@@ -59,14 +60,14 @@ Two errata from the author: at 0:57 "future" (not past) tokens must not communic
 > HTTP API and a small web UI — with an ablation report proving what each piece bought us.
 
 ### Success criteria (definition of done)
-- [ ] Val loss on Tiny Shakespeare beats bigram baseline by a wide margin and matches the video's ≈1.5 region (char-level) — documented.
-- [ ] Own BPE tokenizer: lossless round-trip on 100% of test corpus, property-tested.
-- [ ] Ablation table: baseline → +multihead → +residual/LN → +RoPE → +RMSNorm/SwiGLU, with val loss for each.
-- [ ] KV-cache generation is numerically identical (within tolerance) to no-cache generation; measurable speedup.
-- [ ] Training resumes from checkpoint with identical loss curve continuation.
-- [ ] SFT model follows a chat template and stops at `<|end|>`.
-- [ ] `gpt-scratch chat` CLI + `POST /v1/chat` SSE streaming + web UI working end to end.
-- [ ] ≥80% test coverage on tokenizer, model, sampling, data code.
+- [x] Val loss on Tiny Shakespeare beats bigram baseline by a wide margin and matches the video's ≈1.5 region (char-level) — documented.
+- [x] Own BPE tokenizer: lossless round-trip on 100% of test corpus, property-tested.
+- [~] Ablation table: baseline → +RoPE → +RMSNorm → +SwiGLU with val loss for each (done; the multi-head and residual/LN steps were not ablated separately - they are part of the baseline).
+- [x] KV-cache generation is numerically identical (within tolerance) to no-cache generation; measurable speedup.
+- [x] Training resumes from checkpoint with identical loss curve continuation.
+- [x] SFT model follows a chat template and stops at `<|end|>`.
+- [x] `gpt-scratch chat` CLI + `POST /v1/chat` SSE streaming + web UI working end to end.
+- [x] ≥80% test coverage on tokenizer, model, sampling, data code.
 
 ### Non-goals
 - Competing with real LLMs on quality. RLHF/DPO (read-only concept, maybe a stretch).
@@ -100,74 +101,74 @@ Legend: **W1** = no dependencies, start all at once · **W2** = needs listed W1 
 Format: `ID — task (deps)`. Every task = one microcommit (tests in same or preceding commit).
 
 ### Track A · Data
-- [ ] **A1 · W1** — Script to download Tiny Shakespeare + SHA-256 verify (none)
-- [ ] **A2 · W1** — Text cleaner: unicode normalise, strip control chars, dedupe lines (none)
-- [ ] **A3 · W2** — Train/val split + `uint16` memmap shards writer (A1, B1)
-- [ ] **A4 · W2** — Random-batch loader returning `(x, y)` shifted by one, with tests for shape/shift/no-overlap-leak (A3)
+- [x] **A1 · W1** — Script to download Tiny Shakespeare + SHA-256 verify (none)
+- [x] **A2 · W1** — Text cleaner: unicode normalise, strip control chars, dedupe lines (none)
+- [x] **A3 · W2** — Train/val split + `uint16` memmap shards writer (A1, B1)
+- [x] **A4 · W2** — Random-batch loader returning `(x, y)` shifted by one, with tests for shape/shift/no-overlap-leak (A3)
 - [ ] **A5 · W1** — Optional Hinglish/Hindi corpus fetcher + licence note (none; never commit raw data)
 
 ### Track B · Tokenizer
-- [ ] **B1 · W1** — Char tokenizer: `encode/decode`, vocab save/load (none)
-- [ ] **B2 · W1** — Byte-level BPE trainer (merge counting, deterministic tie-break) (none)
-- [ ] **B3 · W2** — BPE encode/decode with regex pre-split pattern (B2)
-- [ ] **B4 · W2** — Special tokens (`<|endoftext|>`, `<|user|>`, `<|assistant|>`, `<|end|>`) (B3)
-- [ ] **B5 · W2** — Property tests: `decode(encode(s)) == s` for random unicode (B3)
-- [ ] **B6 · W3** — Compare compression ratio vs `tiktoken` as sanity (B3)
+- [x] **B1 · W1** — Char tokenizer: `encode/decode`, vocab save/load (none)
+- [x] **B2 · W1** — Byte-level BPE trainer (merge counting, deterministic tie-break) (none)
+- [x] **B3 · W2** — BPE encode/decode with regex pre-split pattern (B2)
+- [x] **B4 · W2** — Special tokens (`<|endoftext|>`, `<|user|>`, `<|assistant|>`, `<|end|>`) (B3)
+- [x] **B5 · W2** — Property tests: `decode(encode(s)) == s` for random unicode (B3)
+- [x] **B6 · W3** — Compare compression ratio vs `tiktoken` as sanity (B3)  _(done: `compare-tokenizer`, results in experiments/tokenizer-compression.md)_
 
 ### Track C · Model
-- [ ] **C1 · W1** — `GPTConfig` frozen dataclass + validation (none)
-- [ ] **C2 · W1** — Bigram baseline model + loss (C1)
-- [ ] **C3 · W1** — Single causal self-attention head (C1)
-- [ ] **C4 · W2** — Multi-head attention (batched, single matmul) (C3)
-- [ ] **C5 · W1** — Feed-forward block (none)
-- [ ] **C6 · W2** — Transformer block: pre-LN + residuals + dropout (C4, C5)
-- [ ] **C7 · W2** — GPT assembly: token + position embeddings, weight tying, init (C6)
-- [ ] **C8 · W1** — Causality test: perturbing token *t* never changes logits at positions < *t* (C3)
-- [ ] **C9 · W2** — RoPE positional encoding replacing learned positions (C7)
-- [ ] **C10 · W2** — RMSNorm swap (C7)
-- [ ] **C11 · W2** — SwiGLU FFN swap (C7)
-- [ ] **C12 · W2** — Use `F.scaled_dot_product_attention`; numeric parity test vs manual (C4)
-- [ ] **C13 · W3** — KV cache: incremental decode + parity test vs full forward (C9)
-- [ ] **C14 · W1** — Param counter + FLOPs estimate util (C1)
+- [x] **C1 · W1** — `GPTConfig` frozen dataclass + validation (none)
+- [x] **C2 · W1** — Bigram baseline model + loss (C1)
+- [x] **C3 · W1** — Single causal self-attention head (C1)
+- [x] **C4 · W2** — Multi-head attention (batched, single matmul) (C3)
+- [x] **C5 · W1** — Feed-forward block (none)
+- [x] **C6 · W2** — Transformer block: pre-LN + residuals + dropout (C4, C5)
+- [x] **C7 · W2** — GPT assembly: token + position embeddings, weight tying, init (C6)
+- [x] **C8 · W1** — Causality test: perturbing token *t* never changes logits at positions < *t* (C3)
+- [x] **C9 · W2** — RoPE positional encoding replacing learned positions (C7)
+- [x] **C10 · W2** — RMSNorm swap (C7)
+- [x] **C11 · W2** — SwiGLU FFN swap (C7)
+- [x] **C12 · W2** — Use `F.scaled_dot_product_attention`; numeric parity test vs manual (C4)
+- [x] **C13 · W3** — KV cache: incremental decode + parity test vs full forward (C9)
+- [x] **C14 · W1** — Param counter + FLOPs estimate util (C1)
 
 ### Track D · Training
-- [ ] **D1 · W1** — Seeding + device selection (cpu/mps/cuda) helper (none)
-- [ ] **D2 · W2** — Minimal training loop (A4, C7)
-- [ ] **D3 · W1** — AdamW param groups (no weight decay on norms/biases) (none)
-- [ ] **D4 · W1** — LR schedule: linear warmup + cosine decay, unit-tested at boundaries (none)
-- [ ] **D5 · W2** — Grad clipping + gradient accumulation (D2)
-- [ ] **D6 · W2** — Checkpoint save/resume incl. optimizer + RNG + step (D2)
-- [ ] **D7 · W2** — Eval loop (val loss every N steps, no-grad, averaged) (D2)
-- [ ] **D8 · W2** — CSV logger + loss-curve plot script (D2)
-- [ ] **D9 · W2** — Overfit-one-batch sanity test (loss → ~0) (D2)
-- [ ] **D10 · W3** — Resume-equivalence test: 100 steps vs 50+resume+50 match (D6)
+- [x] **D1 · W1** — Seeding + device selection (cpu/mps/cuda) helper (none)
+- [x] **D2 · W2** — Minimal training loop (A4, C7)
+- [x] **D3 · W1** — AdamW param groups (no weight decay on norms/biases) (none)
+- [x] **D4 · W1** — LR schedule: linear warmup + cosine decay, unit-tested at boundaries (none)
+- [x] **D5 · W2** — Grad clipping + gradient accumulation (D2)
+- [x] **D6 · W2** — Checkpoint save/resume incl. optimizer + RNG + step (D2)
+- [x] **D7 · W2** — Eval loop (val loss every N steps, no-grad, averaged) (D2)
+- [x] **D8 · W2** — CSV logger + loss-curve plot script (D2)
+- [x] **D9 · W2** — Overfit-one-batch sanity test (loss → ~0) (D2)
+- [x] **D10 · W3** — Resume-equivalence test: 100 steps vs 50+resume+50 match (D6)
 
 ### Track E · Sampling
-- [ ] **E1 · W1** — Greedy + temperature (none)
-- [ ] **E2 · W1** — top-k and top-p filters, tested on hand-made logits (none)
-- [ ] **E3 · W1** — Repetition penalty (none)
-- [ ] **E4 · W2** — `generate()` with stop tokens + max length (C7, E1)
-- [ ] **E5 · W2** — Streaming generator yielding decoded text deltas (E4, B3)
+- [x] **E1 · W1** — Greedy + temperature (none)
+- [x] **E2 · W1** — top-k and top-p filters, tested on hand-made logits (none)
+- [x] **E3 · W1** — Repetition penalty (none)
+- [x] **E4 · W2** — `generate()` with stop tokens + max length (C7, E1)
+- [x] **E5 · W2** — Streaming generator yielding decoded text deltas (E4, B3)
 
 ### Track F · Chat / SFT
-- [ ] **F1 · W1** — Chat template spec + renderer (none)
-- [ ] **F2 · W2** — SFT dataset builder from JSONL conversations (F1, B4)
-- [ ] **F3 · W2** — Loss masking so only assistant tokens contribute; tested (F2)
-- [ ] **F4 · W3** — SFT trainer reusing train loop (F3, D2)
-- [ ] **F5 · W1** — Curate tiny instruction set (hand-written + licensed) (none)
+- [x] **F1 · W1** — Chat template spec + renderer (none)
+- [x] **F2 · W2** — SFT dataset builder from JSONL conversations (F1, B4)
+- [x] **F3 · W2** — Loss masking so only assistant tokens contribute; tested (F2)
+- [x] **F4 · W3** — SFT trainer reusing train loop (F3, D2)
+- [x] **F5 · W1** — Curate tiny instruction set (hand-written + licensed) (none)  _(done differently: tasks derived from the corpus with ground truth (`make-tasks`), not hand-written)_
 
 ### Track G · Serving
-- [ ] **G1 · W2** — `gpt-scratch chat` CLI with streaming (E5)
-- [ ] **G2 · W2** — FastAPI `POST /v1/chat` SSE endpoint + schema validation (E5)
-- [ ] **G3 · W3** — Static web UI (stop/regenerate, markdown) (G2)
-- [ ] **G4 · W3** — Checkpoint selector (switch models without restart) (G2)
+- [x] **G1 · W2** — `gpt-scratch chat` CLI with streaming (E5)
+- [x] **G2 · W2** — FastAPI `POST /v1/chat` SSE endpoint + schema validation (E5)
+- [x] **G3 · W3** — Static web UI (stop/regenerate, markdown) (G2)
+- [x] **G4 · W3** — Checkpoint selector (switch models without restart) (G2)  _(done: several runs served at once, model dropdown, /v1/models)_
 
 ### Track H · Quality & write-up
-- [ ] **H1 · W1** — `pyproject.toml` (venv+pip, py>=3.11), ruff, pytest, coverage config (none)
-- [ ] **H2 · W1** — Makefile/justfile: `test`, `lint`, `train-*` targets (none)
-- [ ] **H3 · W3** — Ablation runner + results table (D7, C9, C10, C11)
-- [ ] **H4 · W3** — Attention heatmap notebook (C4)
-- [ ] **H5 · W3** — README: how to train, sample, serve; ablation table (all)
+- [x] **H1 · W1** — `pyproject.toml` (venv+pip, py>=3.11), ruff, pytest, coverage config (none)
+- [x] **H2 · W1** — Makefile/justfile: `test`, `lint`, `train-*` targets (none)  _(done: Makefile)_
+- [x] **H3 · W3** — Ablation runner + results table (D7, C9, C10, C11)
+- [x] **H4 · W3** — Attention heatmap notebook (C4)  _(done as SVG heatmaps (`gpt-scratch attention`), not a notebook)_
+- [x] **H5 · W3** — README: how to train, sample, serve; ablation table (all)
 
 **First wave to launch together:** A1 A2 A5 B1 B2 C1 C3 C5 C14 D1 D3 D4 E1 E2 E3 F1 F5 H1 H2.
 
@@ -187,9 +188,9 @@ Format: `ID — task (deps)`. Every task = one microcommit (tests in same or pre
 
 **Talking points for you:** why causal masking matters · what attention actually computes (Q/K/V in plain words) · one thing that broke and how you found it · honest limits (tiny model, Shakespeare-flavoured).
 
-- [ ] **Z1** — Save step-0 / mid / final sample outputs automatically during training (D8)
-- [ ] **Z2** — One-command demo script `make demo` that replays a pre-trained checkpoint (G2)
+- [x] **Z1** — Save step-0 / mid / final sample outputs automatically during training (D8)
+- [x] **Z2** — One-command demo script `make demo` that replays a pre-trained checkpoint (G2)  _(done as `scripts/demo.sh` + `make demo` (needs local checkpoints; `scripts/reproduce.sh` rebuilds them))_
 - [ ] **Z3** — Export loss-curve + ablation chart as PNG (H3)
-- [ ] **Z4** — Write `demo/SCRIPT.md` (shot list + talking points above, timed)
+- [x] **Z4** — Write `demo/SCRIPT.md` (shot list + talking points above, timed)
 - [ ] **Z5** — Screen recording (QuickTime / `Cmd+Shift+5`) following the script
-- [ ] **Z6** — LinkedIn post draft + 1 hero image (before/after samples) in `demo/LINKEDIN.md`
+- [x] **Z6** — LinkedIn post draft + 1 hero image (before/after samples) in `demo/LINKEDIN.md`  _(draft exists in demo/LINKEDIN.md; needs your edit)_
