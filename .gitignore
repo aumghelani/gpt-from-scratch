@@ -4,3 +4,7 @@ data/shards/
 checkpoints/
 runs/
 *.egg-info/
+
+# prepared datasets and trained runs are reproducible from the CLI; never commit them
+/data/
+/runs/
