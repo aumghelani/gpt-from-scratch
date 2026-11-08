@@ -6,7 +6,7 @@
 
 ## Post (≈1,100 chars)
 
-I trained a GPT from scratch on my laptop. Here's the same network before and after 25 minutes of training:
+I trained a GPT from scratch on my laptop. Here's the same network before and after about 20 minutes of training on my laptop:
 
 Before: `ROMEO:NCaa;suqWP.&&TNUUuIgl,ONNNfvjjXLZ&Kf…`
 After: `ROMEO: Call thy repeal up leave at the hardy shore. O, a virtue can I came in with thy hand…`
@@ -41,7 +41,7 @@ Code, tests and the full ablation: https://github.com/aumghelani/ai-engineering-
 ## Notes before you post
 
 - Numbers above are copied from `README.md`; re-check after any re-run.
-- "25 minutes": the flagship run took ~46 minutes wall-clock because other work shared the machine; best checkpoint
-  was at step 1,500 (~60% through). Replace "25 minutes" with what you're comfortable defending, or say "under an hour".
+- "About 20 minutes": 1,500 steps × ~0.75 s/step at ~11k tokens/s ≈ 19 min of compute to the best checkpoint. The full
+  2,500-step run took ~46 min wall-clock (other work shared the machine), but the best weights come from step 1,500.
 - Hook options to A/B: (a) the before/after text, (b) "It overfit after 1,500 steps — here's the chart".
 - Hero image: side-by-side of the two samples, or `demo/assets/flagship-val-loss.svg` exported as PNG.
