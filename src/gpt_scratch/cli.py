@@ -269,6 +269,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     handlers = {
         "prepare": _cmd_prepare, "train": _cmd_train, "ablate": _cmd_ablate, "sample": _cmd_sample,
         "serve": _cmd_serve, "attention": _cmd_attention, "plot": _cmd_plot, "plot-ablation": _cmd_plot_ablation, "finetune": cli_chat.cmd_finetune, "chat": cli_chat.cmd_chat,
+        "make-tasks": cli_chat.cmd_make_tasks, "eval-chat": cli_chat.cmd_eval_chat,
     }
     try:
         return handlers[args.command](args)
