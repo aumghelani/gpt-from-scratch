@@ -65,6 +65,9 @@ def add_parsers(sub: argparse._SubParsersAction) -> None:  # type: ignore[type-a
     mt.add_argument("--out-dir", required=True)
     mt.add_argument("--val-fraction", type=float, default=0.1, help="tail share held out for scoring")
     mt.add_argument("--min-speeches", type=int, default=5, help="only speakers with this many training speeches")
+    mt.add_argument("--kinds", nargs="+", choices=("who", "speak"), default=["who", "speak"],
+                    help="which task types go in the training set")
+    mt.add_argument("--who-lines", type=int, default=2, help="speech lines shown in each who-says-this question")
     mt.add_argument("--seed", type=int, default=1337)
 
     ev = sub.add_parser("eval-chat", help="score a fine-tuned run on held-out who-says-this questions")
@@ -179,9 +182,13 @@ def cmd_make_tasks(args: argparse.Namespace) -> int:
     if not speakers:
         log.error("no speaker has %d training speeches; lower --min-speeches", args.min_speeches)
         return 2
-    train = who_conversations(train_speeches, speakers) + speak_conversations(train_speeches, speakers)
+    train = []
+    if "who" in args.kinds:
+        train += who_conversations(train_speeches, speakers, max_lines=args.who_lines)
+    if "speak" in args.kinds:
+        train += speak_conversations(train_speeches, speakers)
     random.Random(args.seed).shuffle(train)
-    held = who_conversations(held_speeches, speakers)
+    held = who_conversations(held_speeches, speakers, max_lines=args.who_lines)
     out = Path(args.out_dir)
     out.mkdir(parents=True, exist_ok=True)
     _write_jsonl(out / "train.jsonl", train)

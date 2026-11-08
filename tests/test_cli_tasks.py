@@ -87,3 +87,19 @@ def test_checkpoint_path_rejects_unknown_choice(tmp_path):
 
     with pytest.raises(ValueError):
         checkpoint_path(tmp_path, "middle")
+
+
+def test_make_tasks_can_build_a_who_only_training_set(tmp_path, text_file):
+    out = tmp_path / "tasks"
+    assert main(["make-tasks", "--text", str(text_file), "--out-dir", str(out), "--min-speeches", "3",
+                 "--kinds", "who"]) == 0
+    train = read_jsonl(out / "train.jsonl")
+    assert train and all(c["messages"][0]["content"].startswith("Who says this?") for c in train)
+
+
+def test_make_tasks_can_use_more_opening_lines_per_question(tmp_path, text_file):
+    out = tmp_path / "tasks"
+    assert main(["make-tasks", "--text", str(text_file), "--out-dir", str(out), "--min-speeches", "3",
+                 "--kinds", "who", "--who-lines", "1"]) == 0
+    prompts = [c["messages"][0]["content"] for c in read_jsonl(out / "train.jsonl")]
+    assert all(p.count("\n") == 1 for p in prompts)  # header line + exactly one speech line
