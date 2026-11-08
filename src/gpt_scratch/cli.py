@@ -19,7 +19,9 @@ from gpt_scratch.data.shards import load_shard
 from gpt_scratch.experiments.ablation import default_variants, render_markdown, run_ablation
 from gpt_scratch.model.config import FFNS, NORMS, POS_ENCODINGS, GPTConfig
 from gpt_scratch.model.gpt import GPT
+from gpt_scratch.model.inspect import attention_weights
 from gpt_scratch.presets import PRESETS, model_config_for, with_steps
+from gpt_scratch.report.heatmap import heatmap_svg
 from gpt_scratch.report.logs import read_series
 from gpt_scratch.report.svg import delta_bar_svg, line_chart_svg
 from gpt_scratch.sample.generate import stream_generate
@@ -86,6 +88,14 @@ def _build_parser() -> argparse.ArgumentParser:
     pa.add_argument("--results", required=True, help="results.json from `ablate`")
     pa.add_argument("--out", required=True)
     pa.add_argument("--theme", choices=("light", "dark"), default="light")
+
+    at = sub.add_parser("attention", help="draw what one attention head looks at (SVG heatmap)")
+    at.add_argument("--run", required=True)
+    at.add_argument("--text", required=True)
+    at.add_argument("--layer", type=int, default=0)
+    at.add_argument("--head", type=int, help="head index (default: average over heads)")
+    at.add_argument("--out", required=True)
+    at.add_argument("--theme", choices=("light", "dark"), default="light")
 
     sv = sub.add_parser("serve", help="serve a run over HTTP with a web UI")
     sv.add_argument("--run", required=True)
@@ -185,6 +195,29 @@ def _cmd_plot_ablation(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_attention(args: argparse.Namespace) -> int:
+    run = Path(args.run)
+    payload = torch.load(run / "latest.pt", map_location="cpu", weights_only=False)
+    model = GPT(GPTConfig.from_dict(payload["config"]))
+    load_checkpoint(run / "latest.pt", model)
+    tok = load_tokenizer(run / "tokenizer.json")
+    ids = tok.encode(args.text)[: model.config.block_size]
+    maps = attention_weights(model, torch.tensor([ids]))
+    if not 0 <= args.layer < len(maps):
+        log.error("layer must be in [0, %d), got %d", len(maps), args.layer)
+        return 2
+    layer = maps[args.layer]
+    if args.head is not None and not 0 <= args.head < layer.size(0):
+        log.error("head must be in [0, %d), got %d", layer.size(0), args.head)
+        return 2
+    weights = layer.mean(0) if args.head is None else layer[args.head]
+    which = "mean of heads" if args.head is None else f"head {args.head}"
+    svg = heatmap_svg(weights.tolist(), [tok.decode([i]) for i in ids], f"Layer {args.layer}, {which}", args.theme)
+    Path(args.out).parent.mkdir(parents=True, exist_ok=True)
+    Path(args.out).write_text(svg, encoding="utf-8")
+    return 0
+
+
 def _cmd_serve(args: argparse.Namespace) -> int:
     import uvicorn  # imported lazily: only needed for this command
 
@@ -224,7 +257,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     args = _build_parser().parse_args(argv)
     handlers = {
         "prepare": _cmd_prepare, "train": _cmd_train, "ablate": _cmd_ablate, "sample": _cmd_sample,
-        "serve": _cmd_serve, "plot": _cmd_plot, "plot-ablation": _cmd_plot_ablation, "finetune": cli_chat.cmd_finetune, "chat": cli_chat.cmd_chat,
+        "serve": _cmd_serve, "attention": _cmd_attention, "plot": _cmd_plot, "plot-ablation": _cmd_plot_ablation, "finetune": cli_chat.cmd_finetune, "chat": cli_chat.cmd_chat,
     }
     try:
         return handlers[args.command](args)
