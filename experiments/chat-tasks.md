@@ -24,7 +24,7 @@ gpt-scratch eval-chat --run runs/chat-who --tasks data/tasks-who/heldout.jsonl
 |---|---|---:|---:|
 | mixed who+speak SFT, **training** questions | 200 | 5.0% | 5.0% |
 | who-only SFT, **training** questions | 300 | **44.3%** | 6.0% |
-| who-only SFT, **held-out** scenes | 273 | **3.3%** | 24.9% |
+| who-only SFT, **held-out** scenes | 273 | **3.3%** (4.0% on a fresh-clone rerun) | 24.9% |
 
 ## What happened, in order
 
