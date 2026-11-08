@@ -8,6 +8,7 @@ import logging
 import shutil
 import sys
 from collections.abc import Sequence
+from dataclasses import replace
 from pathlib import Path
 
 import torch
@@ -57,6 +58,7 @@ def _build_parser() -> argparse.ArgumentParser:
     tr.add_argument("--seed", type=int, default=1337)
     tr.add_argument("--resume", action="store_true")
     tr.add_argument("--stop-after", type=int, help="stop after N steps (for interruption tests)")
+    tr.add_argument("--eval-interval", type=_positive_int, help="evaluate (and snapshot a sample) every N steps")
 
     ab = sub.add_parser("ablate", help="train architecture variants and compare validation loss")
     ab.add_argument("--data", required=True)
@@ -120,6 +122,13 @@ def _cmd_prepare(args: argparse.Namespace) -> int:
     return 0
 
 
+def _positive_int(text: str) -> int:
+    value = int(text)
+    if value <= 0:
+        raise argparse.ArgumentTypeError("must be a positive integer")
+    return value
+
+
 def _cmd_train(args: argparse.Namespace) -> int:
     data_dir, run_dir = Path(args.data), Path(args.out)
     try:
@@ -130,6 +139,8 @@ def _cmd_train(args: argparse.Namespace) -> int:
     preset = PRESETS[args.preset]
     if args.steps:
         preset = with_steps(preset, args.steps)
+    if args.eval_interval:
+        preset = replace(preset, eval_interval=min(args.eval_interval, preset.max_steps))
     model_cfg = model_config_for(preset, meta["vocab_size"], args.pos, args.norm, args.ffn)
     cfg = TrainConfig(
         max_steps=preset.max_steps, batch_size=preset.batch_size, block_size=preset.block_size,

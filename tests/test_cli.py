@@ -66,3 +66,17 @@ def test_training_snapshots_samples_at_start_and_each_eval(tmp_path, corpus):
     files = sorted(p.name for p in (run / "samples").glob("step-*.txt"))
     assert files == ["step-000000.txt", "step-000003.txt", "step-000006.txt"]
     assert all(len((run / "samples" / f).read_text()) > 0 for f in files)
+
+
+def test_eval_interval_flag_overrides_the_preset(tmp_path, corpus):
+    _, run = run_pipeline(tmp_path, corpus, ["--eval-interval", "2"])
+    files = sorted(p.name for p in (run / "samples").glob("step-*.txt"))
+    assert files == ["step-000000.txt", "step-000002.txt", "step-000004.txt", "step-000006.txt"]
+
+
+def test_eval_interval_must_be_positive(tmp_path, corpus):
+    data = tmp_path / "data"
+    main(["prepare", "--input", str(corpus), "--out", str(data), "--tokenizer", "char"])
+    with pytest.raises(SystemExit):
+        main(["train", "--data", str(data), "--out", str(tmp_path / "r"), "--preset", "test",
+              "--eval-interval", "0"])
