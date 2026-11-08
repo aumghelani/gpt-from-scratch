@@ -8,3 +8,8 @@ runs/
 # prepared datasets and trained runs are reproducible from the CLI; never commit them
 /data/
 /runs/
+
+# screen recordings are uploaded, not committed
+*.mov
+*.mp4
+*.webm
