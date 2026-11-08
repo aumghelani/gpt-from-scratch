@@ -1,33 +1,38 @@
-# GPT From Scratch — demo script (target 3:30)
+# GPT From Scratch - demo script (target 5:00)
 
 Narration is **bullets for you to say in your own words**, not a script to read. Every command below was run to
-produce the repo's results; numbers are from `README.md`. Record in short takes, one per beat.
+produce the repo's results. If you can answer the 15 questions at the end of
+[docs/HOW-IT-WORKS.md](../docs/HOW-IT-WORKS.md), you can explain everything here. Record in short takes, one per beat.
 
-Setup before recording: `cd gpt-from-scratch`, venv active, terminal font ≥ 18pt, notifications off, no `.env`
-or email visible. Pre-run `gpt-scratch serve --run runs/flagship-best --device cpu` in a second tab (port 8000).
+Setup: `cd gpt-from-scratch`, venv active, terminal font 18pt or larger, notifications off, no `.env` or email visible.
+Checkpoints must exist (`scripts/reproduce.sh` rebuilds them). Pre-run in a second tab:
+`gpt-scratch serve --run runs/flagship-best runs/chat-who --device cpu`.
 
 | # | Time | ON SCREEN | YOU SAY (bullets) |
 |---|---|---|---|
-| 0 | 0:00 | `demo/assets/samples/step-000000-untrained.txt` then `step-001500-best.txt` side by side | • "Same network. Left: before training. Right: after about 20 minutes of training on my laptop." • Say it before explaining anything |
-| 1 | 0:20 | Title card / README top | • Built it following Karpathy's "Let's build GPT", then added things the video doesn't cover • 10.7M parameters, trained from scratch, tiny Shakespeare |
-| 2 | 0:45 | `src/gpt_scratch/model/attention.py` (the `forward`) | • Attention = every token asks "who is relevant to me?" • Q/K/V in one sentence each • The mask is why it can only look backwards |
-| 3 | 1:15 | `gpt-scratch attention --run runs/flagship-best --text "ROMEO: But soft, what light" --layer 3 --out /tmp/a.svg` → open `demo/assets/attention-layer3-mean.svg` | • Rows ask, columns answer • Lower-triangular = causal • Mostly looks at the last few characters and word starts |
-| 4 | 1:45 | `demo/assets/flagship-val-loss.svg` | • Validation loss goes down… then up • That's overfitting — 10M parameters, 1 MB of text • I ship the step-1500 checkpoint, not the last one |
-| 5 | 2:15 | `demo/assets/ablation-delta.svg` | • I ablated each upgrade: RoPE, RMSNorm, SwiGLU • RoPE helps most; RMSNorm is a wash on quality (cheaper, not better) • One seed — I'd call gaps under 0.01 noise |
-| 6 | 2:45 | Browser `http://127.0.0.1:8000`, type `ROMEO:` → **Send**, then **Stop**, then **Redo** | • Streaming over SSE • It's a text-completer: a char-level Shakespeare model, not an assistant • (Stop and Redo both work; Redo had a history bug I found by reading my own UI code) |
-| 7 | 3:05 | `README.md` → "Engineering notes (bugs the tests caught)" | • Property test found my tokenizer silently dropped underscores • Rendering a chart found a label overlapping the row name • A "passing" test was wrong, not the code (Adam vs gradients) |
-| 8 | 3:20 | Repo link | • What I'd do next: more data, a real tokenizer vocab at scale • One real question to the audience (see LINKEDIN.md) |
+| 0 | 0:00 | `demo/assets/samples/step-000000-untrained.txt` beside `step-001500-best.txt` | - "Same network. Left: before training. Right: after about 17 minutes of training on my laptop." - Say it before explaining anything |
+| 1 | 0:20 | README top | - Built it following Karpathy's "Let's build GPT", then added what the video doesn't cover - 10.7M parameters, from scratch, tiny Shakespeare |
+| 2 | 0:40 | `scripts/demo.sh tour` - scroll slowly through sections 1-4 | - Text becomes integers (show the token list) - Most of the model is feed-forward layers, a third is attention - An untrained model's loss is ln(vocabulary) = 4.17; mine reached 1.46 - It outputs a probability for every next token. That is the whole idea |
+| 3 | 1:30 | Same output, sections 6-7, then open `src/gpt_scratch/model/attention.py` at the `forward` | - Query, key, value in one sentence each - The mask is why it only looks backwards (the first token attends 100% to itself) - KV cache: after step 1 only ONE new token is fed in |
+| 4 | 2:10 | `scripts/demo.sh bench` | - Same tokens with and without the cache - 4x faster on CPU for 240 tokens, 2.3x on the GPU - My first number was wrong: it included GPU warm-up. I fixed it and kept the fix in the history |
+| 5 | 2:40 | `demo/assets/flagship-val-loss.svg` | - Validation loss goes down, then up: overfitting. 10M parameters, 1 MB of text - I ship the step-1,500 checkpoint, not the last - The same happened to the BPE model and to chat fine-tuning |
+| 6 | 3:10 | `demo/assets/ablation-delta.svg` | - RoPE helped most; RMSNorm is a wash (cheaper, not better); one seed, so gaps under 0.01 are noise |
+| 7 | 3:30 | Browser `127.0.0.1:8000`: pick the model, type `ROMEO:`, press **Enter**; switch to the chat model, `Speak as JULIET.` | - Streaming over server-sent events - The dropdown switches models - Chat model stops by itself at the end token. Verse-shaped, but not meaningful |
+| 8 | 4:10 | `experiments/chat-tasks.md` results table | - I scored it: "who says this?" 44% on questions it trained on, **3% on unseen scenes** - Guessing the commonest speaker gets 25%, so on new scenes it is *worse than guessing* - That is memorisation. The fix is more data, not more steps |
+| 9 | 4:40 | README "Engineering notes" | - A crash lost the whole run: resume existed but nothing was saved until the end - found by a test that actually crashes - The UI didn't send on Enter; found by using it in a browser |
+| 10 | 4:55 | Repo link | - One real question to the audience (see LINKEDIN.md) |
 
 ## Gotchas to avoid on camera
 
-- **Don't claim the model "understands" Shakespeare.** The sample reads like verse; the content is nonsense. Show the gap.
-- Don't run `train` live (it takes ~45 min); show the log chart.
+- **Don't claim the model understands Shakespeare or that it is a chatbot.** It reads like verse; the content is nonsense.
+- Don't run `train` live. The flagship's training steps take about 29 minutes (17 to reach the best checkpoint).
 - If the server tab shows a port error: `lsof -i :8000`, kill, restart.
-- The browser UI needs `gpt-scratch serve` on **127.0.0.1** only; do not bind `0.0.0.0` on a shared network.
+- Serve on **127.0.0.1** only; do not bind `0.0.0.0` on a shared network.
+- The `tour` output scrolls; run it once beforehand and know where sections 4 and 7 are.
 
 ## Recording checklist
 
-- [ ] Dry run, timed (cut any beat > 45 s)
+- [ ] Dry run, timed (cut any beat over 45 s)
 - [ ] Captions on (LinkedIn autoplays muted)
 - [ ] Record each beat as its own take
-- [ ] Final cut 60–120 s for the feed; this 3:30 version for the repo / YouTube
+- [ ] Feed cut 60-120 s (beats 0, 2-short, 5, 8); this 5:00 version for the repo or YouTube

@@ -71,7 +71,7 @@ Now is the winter of our discontent"
 
 ```bash
 gpt-scratch train --data data/shakespeare-char --out runs/flagship --preset small --steps 2500 \
-    --pos rope --norm rmsnorm --ffn swiglu --device mps          # ~46 min, ~11k tokens/s
+    --pos rope --norm rmsnorm --ffn swiglu --device mps          # ~46 min wall-clock (~29 min of training steps), ~11k tokens/s
 ```
 
 | | |
