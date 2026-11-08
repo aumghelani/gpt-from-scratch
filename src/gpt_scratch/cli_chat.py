@@ -28,7 +28,7 @@ from gpt_scratch.model.config import GPTConfig
 from gpt_scratch.model.gpt import GPT
 from gpt_scratch.tokenizer import load_tokenizer
 from gpt_scratch.tokenizer.bpe import BPETokenizer
-from gpt_scratch.train.checkpoint import load_checkpoint
+from gpt_scratch.train.checkpoint import CHECKPOINTS, checkpoint_path, load_checkpoint
 from gpt_scratch.train.device import pick_device
 from gpt_scratch.train.loop import TrainConfig, train
 
@@ -76,17 +76,6 @@ def add_parsers(sub: argparse._SubParsersAction) -> None:  # type: ignore[type-a
     ev.add_argument("--checkpoint", choices=CHECKPOINTS, default="best")
     ev.add_argument("--limit", type=int, help="score only the first N questions")
     ev.add_argument("--device", default="auto")
-
-
-CHECKPOINTS = ("best", "latest")
-
-
-def checkpoint_path(run: Path, which: str) -> Path:
-    """`best` (lowest validation loss) when it exists, else `latest`; `latest` is always the last saved."""
-    if which not in CHECKPOINTS:
-        raise ValueError(f"checkpoint must be one of {CHECKPOINTS}, got {which!r}")
-    best = run / "best.pt"
-    return best if which == "best" and best.exists() else run / "latest.pt"
 
 
 def _load_model(run: Path, which: str, device: str | torch.device | None = None) -> GPT:

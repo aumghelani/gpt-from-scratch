@@ -16,6 +16,7 @@ class SamplingParams(BaseModel):
     top_p: float = Field(1.0, gt=0.0, le=1.0)
     seed: int | None = Field(None, ge=0, le=2**31 - 1)
     stream: bool = False
+    model: str | None = Field(None, max_length=100, description="which served model; defaults to the first")
 
 
 class GenerateRequest(SamplingParams):
@@ -44,6 +45,15 @@ class TextResponse(BaseModel):
 
 class Health(BaseModel):
     status: str
+    model: str
     chat: bool
     params: int
     block_size: int
+
+
+class ModelInfo(BaseModel):
+    id: str
+    chat: bool
+    params: int
+    block_size: int
+    checkpoint: str

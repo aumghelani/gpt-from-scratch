@@ -71,3 +71,14 @@ def load_checkpoint(
     return CheckpointState(
         step=payload["step"], config=GPTConfig.from_dict(payload["config"]), extra=payload["extra"]
     )
+
+
+CHECKPOINTS = ("best", "latest")
+
+
+def checkpoint_path(run: Path, which: str) -> Path:
+    """`best` (lowest validation loss) when it exists, else `latest`; `latest` is always the last saved."""
+    if which not in CHECKPOINTS:
+        raise ValueError(f"checkpoint must be one of {CHECKPOINTS}, got {which!r}")
+    best = run / "best.pt"
+    return best if which == "best" and best.exists() else run / "latest.pt"

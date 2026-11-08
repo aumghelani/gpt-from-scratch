@@ -16,7 +16,7 @@ from gpt_scratch.serve.schemas import ChatMessage, SamplingParams
 from gpt_scratch.tokenizer import load_tokenizer
 from gpt_scratch.tokenizer.bpe import BPETokenizer
 from gpt_scratch.tokenizer.stream import make_stream_decoder
-from gpt_scratch.train.checkpoint import load_checkpoint
+from gpt_scratch.train.checkpoint import checkpoint_path, load_checkpoint
 from gpt_scratch.train.device import pick_device
 
 
@@ -25,9 +25,10 @@ class PromptError(ValueError):
 
 
 class Engine:
-    def __init__(self, run_dir: str | Path, device: str = "auto") -> None:
+    def __init__(self, run_dir: str | Path, device: str = "auto", checkpoint: str = "best") -> None:
         run = Path(run_dir)
-        ckpt = run / "latest.pt"
+        ckpt = checkpoint_path(run, checkpoint)
+        self.checkpoint_name = ckpt.name
         if not ckpt.exists() or not (run / "tokenizer.json").exists():
             raise FileNotFoundError(f"{run} is not a trained run directory")
         self.device = pick_device(device)

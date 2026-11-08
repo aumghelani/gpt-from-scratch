@@ -100,7 +100,8 @@ def _build_parser() -> argparse.ArgumentParser:
     at.add_argument("--theme", choices=("light", "dark"), default="light")
 
     sv = sub.add_parser("serve", help="serve a run over HTTP with a web UI")
-    sv.add_argument("--run", required=True)
+    sv.add_argument("--run", required=True, nargs="+", help="one or more run directories (the first is the default)")
+    sv.add_argument("--checkpoint", choices=("best", "latest"), default="best")
     sv.add_argument("--host", default="127.0.0.1", help="bind address (default: local only)")
     sv.add_argument("--port", type=int, default=8000)
     sv.add_argument("--device", default="auto")
@@ -236,7 +237,7 @@ def _cmd_serve(args: argparse.Namespace) -> int:
     from gpt_scratch.serve.app import create_app
 
     try:
-        app = create_app(args.run, args.device)
+        app = create_app(args.run, args.device, args.checkpoint)
     except FileNotFoundError as exc:
         log.error("%s", exc)
         return 2

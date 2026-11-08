@@ -44,6 +44,7 @@ INDEX_HTML = """<!doctype html>
     <button id="regen" type="button" disabled>Redo</button>
   </div>
   <div class="ctl">
+    <label id="modelbox" hidden>model <select id="model"></select></label>
     <label>temperature <input id="temp" type="range" min="0" max="2" step="0.1" value="0.8">
       <span id="tempv">0.8</span></label>
     <label>max tokens <input id="maxnew" type="number" min="1" max="1024" value="200" style="width:70px"></label>
@@ -51,7 +52,7 @@ INDEX_HTML = """<!doctype html>
 </form>
 <script>
 const $ = (id) => document.getElementById(id);
-let chatMode = false, history = [], controller = null, lastPrompt = "";
+let chatMode = false, history = [], controller = null, lastPrompt = "", models = [];
 
 function bubble(role, text) {
   const box = document.createElement("div");
@@ -67,12 +68,25 @@ function bubble(role, text) {
   return body;
 }
 
+function applyModel() {
+  const m = models.find((x) => x.id === $("model").value);
+  if (!m) return;
+  chatMode = m.chat;
+  $("status").textContent = (chatMode ? "chat mode" : "text-completion mode") + " · " +
+    m.params.toLocaleString() + " parameters · context " + m.block_size + " · " + m.checkpoint;
+}
+
 async function init() {
   try {
-    const h = await (await fetch("/health")).json();
-    chatMode = h.chat;
-    $("status").textContent = (chatMode ? "chat mode" : "text-completion mode") +
-      " · " + h.params.toLocaleString() + " parameters · context " + h.block_size;
+    models = await (await fetch("/v1/models")).json();
+    for (const m of models) {
+      const option = document.createElement("option");
+      option.value = m.id;
+      option.textContent = m.id + (m.chat ? " (chat)" : "");
+      $("model").append(option);
+    }
+    $("modelbox").hidden = models.length < 2;
+    applyModel();
   } catch (e) { $("status").textContent = "server unreachable"; }
 }
 
@@ -81,7 +95,8 @@ async function run(prompt) {
   const out = bubble(chatMode ? "assistant" : "model", "");
   controller = new AbortController();
   $("send").disabled = true; $("stop").disabled = false; $("regen").disabled = true;
-  const common = {max_new_tokens: Number($("maxnew").value), temperature: Number($("temp").value), stream: true};
+  const common = {max_new_tokens: Number($("maxnew").value), temperature: Number($("temp").value), stream: true,
+                  model: $("model").value || null};
   const url = chatMode ? "/v1/chat" : "/v1/generate";
   const body = chatMode ? {...common, messages: [...history, {role: "user", content: prompt}]}
                         : {...common, prompt};
@@ -126,6 +141,9 @@ $("regen").addEventListener("click", () => {
   if (log.lastElementChild) log.lastElementChild.remove();           // drop the old reply bubble
   if (chatMode && history.length >= 2) history = history.slice(0, -2); // and its history entries
   run(lastPrompt);
+});
+$("model").addEventListener("change", () => {      // a different model starts a fresh conversation
+  history = []; lastPrompt = ""; $("log").replaceChildren(); applyModel();
 });
 $("temp").addEventListener("input", () => { $("tempv").textContent = $("temp").value; });
 init();
