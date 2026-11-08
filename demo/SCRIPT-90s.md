@@ -31,5 +31,5 @@ Total: about 90 s = 6 beats of 10-20 s. If a beat runs long, cut words, not beat
 ## Do not say
 
 - "It understands Shakespeare" or "it's a chatbot". It produces verse-shaped text with no meaning.
-- "Built over weeks". The git history is 82 commits made on one day (2026-11-06). If you mention time, say what is true.
+- A build time longer than the truth. The repo went from first commit to public in about three days (6 to 8 November 2026). If you mention time, say that.
 - Any speed-up number you have not just seen on your own screen. Your laptop will differ.
